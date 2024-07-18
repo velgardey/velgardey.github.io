@@ -1,30 +1,39 @@
-// src/components/Spacecraft.tsx
-
 import React from 'react';
+
 
 interface SpacecraftProps {
     rotation: number;
+    x: number;
+    y: number;
 }
 
-const Spacecraft: React.FC<SpacecraftProps> = ({ rotation }) => {
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-
+const Spacecraft: React.FC<SpacecraftProps> = ({ rotation, x, y }) => {
     return (
         <svg
-            width="40"
-            height="40"
-            viewBox="-20 -20 40 40"
+            width="50"
+            height="50"
+            viewBox="-25 -25 50 50"
             style={{
                 position: 'absolute',
-                left: `${centerX}px`,
-                top: `${centerY}px`,
+                left: `${x}px`,
+                top: `${y}px`,
                 transform: `translate(-50%, -50%) rotate(${rotation}rad)`,
             }}
         >
-            <polygon points="0,-20 17.32,10 -17.32,10" fill="#F35B04" />
+            <defs>
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            <polygon points="0,-25 21.65,12.5 -21.65,12.5" fill="#F35B04" filter="url(#glow)" />
+            <circle cx="0" cy="0" r="5" fill="#FFD700" />
+            <line x1="0" y1="-25" x2="0" y2="12.5" stroke="#FFD700" strokeWidth="2" />
         </svg>
     );
 };
 
-export default Spacecraft;
+export default React.memo(Spacecraft);

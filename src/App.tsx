@@ -10,6 +10,7 @@ import shootSound from './assets/audio/shoot.wav';
 import hitSound from './assets/audio/explosion.wav';
 import BackgroundMusic from './components/BackgroundMusic';
 import ParticleSystem from './components/ParticleSystem';
+import ParticleTrail from './components/ParticleTrail';
 
 export interface Planet {
     x: number;
@@ -33,23 +34,26 @@ const App: React.FC = () => {
     const [planets, setPlanets] = useState<Planet[]>([]);
     const [showFirstText, setShowFirstText] = useState(false);
     const [showSecondText, setShowSecondText] = useState(false);
+    const [permanentTitle, setPermanentTitle] = useState<string | null>(null);
+    const [spacecraftPosition, setSpacecraftPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
     const animationFrameRef = useRef<number>();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
 
     const [playShootSound] = useSound(shootSound);
     const [playHitSound] = useSound(hitSound);
 
     const calculatePlanetRadius = useCallback((label: string) => {
-        const baseRadius = isMobile ? 60 : 80;
+        const baseRadius = isMobile ? 40 : 60;
         const textLength = label.length;
-        return Math.max(baseRadius, textLength * 8);
+        return Math.max(baseRadius, textLength * 6);
     }, [isMobile]);
 
     const createRandomPlanet = useCallback((label: string, color: string, link?: string): Planet => {
         const radius = calculatePlanetRadius(label);
         const x = Math.random() * (window.innerWidth - 2 * radius) + radius;
         const y = Math.random() * (window.innerHeight - 2 * radius) + radius;
-        const speed = 0.5;
+        const speed = 0.3;
         const angle = Math.random() * Math.PI * 2;
         return {
             x, y, radius, label, color, link,
@@ -171,6 +175,7 @@ const App: React.FC = () => {
                 createRandomPlanet('Back', '#FB5607'),
             ]);
             setCurrentPage('projects');
+            setPermanentTitle('Projects');
         } else if (planet.label === 'Contact') {
             setNextPlanets([
                 createRandomPlanet('LinkedIn', '#0077B5', 'https://www.linkedin.com/in/mrigankadey/'),
@@ -181,6 +186,7 @@ const App: React.FC = () => {
                 createRandomPlanet('Back', '#FB5607'),
             ]);
             setCurrentPage('contact');
+            setPermanentTitle('Contact');
         } else if (planet.label === 'Back') {
             setNextPlanets([
                 createRandomPlanet('Projects', '#3A86FF'),
@@ -188,6 +194,7 @@ const App: React.FC = () => {
                 createRandomPlanet('Contact', '#FF006E'),
             ]);
             setCurrentPage('main');
+            setPermanentTitle(null);
         }
         setBullets([]);
     }, [createRandomPlanet, playHitSound]);
@@ -210,6 +217,7 @@ const App: React.FC = () => {
         const centerY = window.innerHeight / 2;
         const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
         setSpacecraftRotation(angle + Math.PI / 2);
+        setSpacecraftPosition({ x: centerX, y: centerY });
     }, []);
 
     const handleTouchMove = useCallback((e: React.TouchEvent) => {
@@ -218,6 +226,7 @@ const App: React.FC = () => {
         const touch = e.touches[0];
         const angle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX);
         setSpacecraftRotation(angle + Math.PI / 2);
+        setSpacecraftPosition({ x: centerX, y: centerY });
     }, []);
 
     const handleInteraction = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -255,6 +264,57 @@ const App: React.FC = () => {
             onBulletOffscreen={() => handleBulletOffscreen(bullet.id)}
         />
     )), [bullets, planets, handlePlanetHit, handleBulletOffscreen]);
+
+    const renderMobileMenu = () => {
+        if (!isMobile) return null;
+
+        return (
+            <div style={{
+                position: 'fixed',
+                top: 10,
+                right: 10,
+                zIndex: 2000,
+            }}>
+                <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    fontSize: '24px',
+                    color: 'white',
+                    cursor: 'pointer',
+                }}>
+                    ☰
+                </button>
+                {isMenuOpen && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '50px',
+                        right: 0,
+                        background: 'rgba(0, 0, 0, 0.8)',
+                        padding: '10px',
+                        borderRadius: '5px',
+                    }}>
+                        <button onClick={() => handlePlanetHit({ label: 'Projects' } as Planet)} style={mobileMenuButtonStyle}>Projects</button>
+                        <button onClick={() => handlePlanetHit({ label: 'Contact' } as Planet)} style={mobileMenuButtonStyle}>Contact</button>
+                        <button onClick={() => window.open('https://drive.google.com/file/d/1ioZ9AmWRulxvjZvDBzTtgvacD6isvvW4/view?usp=sharing', '_blank')} style={mobileMenuButtonStyle}>Resume</button>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const mobileMenuButtonStyle: React.CSSProperties = {
+        display: 'block',
+        width: '100%',
+        padding: '10px',
+        margin: '5px 0',
+        background: 'none',
+        border: '1px solid white',
+        color: 'white',
+        cursor: 'pointer',
+    };
 
     const renderPageContent = useCallback(() => {
         const commonStyle: React.CSSProperties = {
@@ -337,11 +397,16 @@ const App: React.FC = () => {
             <SpaceBackground />
             <AmbientLight />
             <ParticleSystem />
+            <ParticleTrail x={spacecraftPosition.x} y={spacecraftPosition.y} />
             <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0 }}>
                 {memoizedPlanets}
                 {memoizedBullets}
             </svg>
-            <Spacecraft rotation={spacecraftRotation} />
+            <Spacecraft
+                rotation={spacecraftRotation}
+                x={spacecraftPosition.x}
+                y={spacecraftPosition.y}
+            />
             {isExploding && explosionCenter && (
                 <ExplosionTransition
                     centerX={explosionCenter.x}
@@ -350,8 +415,23 @@ const App: React.FC = () => {
                     onAnimationComplete={handleExplosionComplete}
                 />
             )}
-            <Crosshair />
+            {!isMobile && <Crosshair />}
             {renderPageContent()}
+            {permanentTitle && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '5%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    fontSize: isMobile ? '24px' : '36px',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    textShadow: '0 0 10px rgba(255,255,255,0.5)',
+                }}>
+                    {permanentTitle}
+                </div>
+            )}
+            {renderMobileMenu()}
         </div>
     );
 };
