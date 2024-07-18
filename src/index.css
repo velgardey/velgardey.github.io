@@ -8,9 +8,9 @@ body {
 }
 
 @keyframes twinkle {
-  0% { opacity: 0.5; }
-  50% { opacity: 1; }
-  100% { opacity: 0.5; }
+  0% { opacity: 0.25; }
+  50% { opacity: 0.65; }
+  100% { opacity: 0.25; }
 }
 
 .page-content {
