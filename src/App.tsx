@@ -274,7 +274,7 @@ const App: React.FC = () => {
                     <>
                         {showFirstText && (
                             <TypedText
-                                text="Hi, I am Mriganka Dey"
+                                text="Hi , I  am  Mriganka  Dey"
                                 style={commonStyle}
                                 collidable={true}
                                 planets={planets}
@@ -283,7 +283,7 @@ const App: React.FC = () => {
                         )}
                         {showSecondText && (
                             <TypedText
-                                text="Welcome to my portfolio"
+                                text="Welcome  to  my  portfolio"
                                 style={commonStyle}
                                 collidable={true}
                                 planets={planets}
@@ -295,7 +295,7 @@ const App: React.FC = () => {
             case 'projects':
                 return (
                     <TypedText
-                        text="Explore my projects"
+                        text="Explore  my  projects"
                         style={commonStyle}
                         collidable={true}
                         planets={planets}
@@ -305,7 +305,7 @@ const App: React.FC = () => {
             case 'contact':
                 return (
                     <TypedText
-                        text="Get in touch with me"
+                        text="Get  in  touch  with  me"
                         style={commonStyle}
                         collidable={true}
                         planets={planets}
