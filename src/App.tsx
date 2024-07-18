@@ -41,6 +41,7 @@ const App: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
     const lastTouchTimeRef = useRef(0);
+    const [latestTouchPosition, setLatestTouchPosition] = useState({ x: 0, y: 0 });
 
     const [playShootSound] = useSound(shootSound);
     const [playHitSound] = useSound(hitSound);
@@ -235,19 +236,15 @@ const App: React.FC = () => {
         setBullets(prevBullets => prevBullets.filter(bullet => bullet.id !== id));
     }, []);
 
-    const handleMouseMove = useCallback((e: React.MouseEvent) => {
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
-        const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
-        setSpacecraftRotation(angle + Math.PI / 2);
-        setSpacecraftPosition({ x: centerX, y: centerY });
+    const handleTouchMove = useCallback((e: React.TouchEvent) => {
+        const touch = e.touches[0];
+        setLatestTouchPosition({ x: touch.clientX, y: touch.clientY });
     }, []);
 
-    const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const updateSpacecraftOrientation = useCallback((clientX: number, clientY: number) => {
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
-        const touch = e.touches[0];
-        const angle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX);
+        const angle = Math.atan2(clientY - centerY, clientX - centerX);
         setSpacecraftRotation(angle + Math.PI / 2);
         setSpacecraftPosition({ x: centerX, y: centerY });
     }, []);
@@ -259,29 +256,36 @@ const App: React.FC = () => {
         let clientX, clientY;
 
         if ('touches' in e) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-
-            // Prevent rapid firing on mobile
             const now = Date.now();
             if (now - lastTouchTimeRef.current < 300) {
                 return;
             }
             lastTouchTimeRef.current = now;
+
+            clientX = latestTouchPosition.x;
+            clientY = latestTouchPosition.y;
         } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
+            clientX = (e as React.MouseEvent).clientX;
+            clientY = (e as React.MouseEvent).clientY;
         }
 
         const angle = Math.atan2(clientY - centerY, clientX - centerX);
 
-        // Always shoot a single bullet, regardless of device type
+        // Update spacecraft orientation immediately for touch events
+        if ('touches' in e) {
+            updateSpacecraftOrientation(clientX, clientY);
+        }
+
         const newBullet = { id: bulletIdCounter, x: centerX, y: centerY, angle };
         setBullets(prevBullets => [...prevBullets, newBullet]);
         setBulletIdCounter(prev => prev + 1);
 
         playShootSound();
-    }, [bulletIdCounter, isExploding, playShootSound]);
+    }, [bulletIdCounter, isExploding, playShootSound, latestTouchPosition, updateSpacecraftOrientation]);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent) => {
+        updateSpacecraftOrientation(e.clientX, e.clientY);
+    }, [updateSpacecraftOrientation]);
 
     const memoizedPlanets = useMemo(() => planets.map((planet, index) => (
         <Planet key={index} {...planet} />
