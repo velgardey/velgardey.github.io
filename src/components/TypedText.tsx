@@ -1,27 +1,28 @@
-// src/components/TypedText.tsx
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Planet } from '../App';
 
 interface TypedTextProps {
     text: string;
     style?: React.CSSProperties;
+    collidable?: boolean;
+    planets?: Planet[];
+    bullets?: Array<{ id: number; x: number; y: number; angle: number }>;
 }
 
-const TypedText: React.FC<TypedTextProps> = ({ text, style }) => {
+const TypedText: React.FC<TypedTextProps> = ({ text, style, collidable = false, planets = [], bullets = [] }) => {
     const [displayText, setDisplayText] = useState('');
     const [cursorVisible, setCursorVisible] = useState(true);
     const [opacity, setOpacity] = useState(1);
+    const letterRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
     useEffect(() => {
         let i = 0;
         const typingInterval = setInterval(() => {
             if (i < text.length) {
-                setDisplayText(text.slice(0, i + 1));
+                setDisplayText((prev) => prev + text[i]);
                 i++;
             } else {
                 clearInterval(typingInterval);
-
-                // Start fade out after full text is displayed
                 setTimeout(() => {
                     const fadeOutInterval = setInterval(() => {
                         setOpacity((prevOpacity) => {
@@ -32,7 +33,7 @@ const TypedText: React.FC<TypedTextProps> = ({ text, style }) => {
                             return prevOpacity - 0.1;
                         });
                     }, 100);
-                }, 2000); // Wait for 2 seconds before starting fade out
+                }, 2000);
             }
         }, 100);
 
@@ -46,9 +47,55 @@ const TypedText: React.FC<TypedTextProps> = ({ text, style }) => {
         };
     }, [text]);
 
+    useEffect(() => {
+        if (collidable) {
+            const checkCollisions = () => {
+                letterRefs.current.forEach((letterRef) => {
+                    if (letterRef) {
+                        const rect = letterRef.getBoundingClientRect();
+                        const letterX = rect.left + rect.width / 2;
+                        const letterY = rect.top + rect.height / 2;
+
+                        planets.forEach(planet => {
+                            const dx = letterX - planet.x;
+                            const dy = letterY - planet.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            if (distance < planet.radius + 10) {
+                                letterRef.style.color = planet.color;
+                            }
+                        });
+
+                        bullets.forEach(bullet => {
+                            const dx = letterX - bullet.x;
+                            const dy = letterY - bullet.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            if (distance < 10) {
+                                letterRef.style.transform = 'scale(1.5)';
+                                setTimeout(() => {
+                                    if (letterRef) letterRef.style.transform = 'scale(1)';
+                                }, 200);
+                            }
+                        });
+                    }
+                });
+            };
+
+            const animationFrame = requestAnimationFrame(checkCollisions);
+            return () => cancelAnimationFrame(animationFrame);
+        }
+    }, [collidable, planets, bullets]);
+
     return (
         <div style={{...style, opacity}}>
-            {displayText}
+            {displayText.split('').map((char, index) => (
+                <span
+                    key={index}
+                    ref={(el) => letterRefs.current[index] = el}
+                    style={{ display: 'inline-block', transition: 'all 0.2s', marginRight: char === ' ' ? '0.25em' : '0' }}
+                >
+                    {char}
+                </span>
+            ))}
             <span style={{ opacity: cursorVisible ? 1 : 0 }}>|</span>
         </div>
     );

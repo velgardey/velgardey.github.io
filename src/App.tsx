@@ -5,6 +5,11 @@ import AnimatedBullet from './components/AnimatedBullet';
 import Planet from './components/Planet';
 import ExplosionTransition from './components/ExplosionTransition';
 import TypedText from './components/TypedText';
+import useSound from 'use-sound';
+import shootSound from './assets/audio/shoot.wav';
+import hitSound from './assets/audio/explosion.wav';
+import BackgroundMusic from './components/BackgroundMusic';
+import ParticleSystem from './components/ParticleSystem';
 
 export interface Planet {
     x: number;
@@ -31,17 +36,20 @@ const App: React.FC = () => {
     const animationFrameRef = useRef<number>();
     const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
 
+    const [playShootSound] = useSound(shootSound);
+    const [playHitSound] = useSound(hitSound);
+
     const calculatePlanetRadius = useCallback((label: string) => {
-        const baseRadius = isMobile ? 30 : 40;
+        const baseRadius = isMobile ? 60 : 80;
         const textLength = label.length;
-        return Math.max(baseRadius, textLength * 5);
+        return Math.max(baseRadius, textLength * 8);
     }, [isMobile]);
 
     const createRandomPlanet = useCallback((label: string, color: string, link?: string): Planet => {
         const radius = calculatePlanetRadius(label);
         const x = Math.random() * (window.innerWidth - 2 * radius) + radius;
         const y = Math.random() * (window.innerHeight - 2 * radius) + radius;
-        const speed = 0.25;
+        const speed = 0.5;
         const angle = Math.random() * Math.PI * 2;
         return {
             x, y, radius, label, color, link,
@@ -87,13 +95,11 @@ const App: React.FC = () => {
             const sin = Math.sin(angle);
             const cos = Math.cos(angle);
 
-            // Rotate velocities
             const vx1 = p1.vx * cos + p1.vy * sin;
             const vy1 = p1.vy * cos - p1.vx * sin;
             const vx2 = p2.vx * cos + p2.vy * sin;
             const vy2 = p2.vy * cos - p2.vx * sin;
 
-            // Swap the velocities
             [p1.vx, p1.vy, p2.vx, p2.vy] = [
                 vx2 * cos - vy1 * sin,
                 vy1 * cos + vx2 * sin,
@@ -101,7 +107,6 @@ const App: React.FC = () => {
                 vy2 * cos + vx1 * sin
             ];
 
-            // Move planets apart to prevent sticking
             const overlap = (p1.radius + p2.radius - distance) / 2;
             p1.x -= overlap * cos;
             p1.y -= overlap * sin;
@@ -128,7 +133,6 @@ const App: React.FC = () => {
                 return { ...planet, x: newX, y: newY };
             });
 
-            // Check for collisions
             for (let i = 0; i < newPlanets.length; i++) {
                 for (let j = i + 1; j < newPlanets.length; j++) {
                     handleCollision(newPlanets[i], newPlanets[j]);
@@ -153,6 +157,7 @@ const App: React.FC = () => {
     const handlePlanetHit = useCallback((planet: Planet) => {
         setIsExploding(true);
         setExplosionCenter({x: planet.x, y: planet.y});
+        playHitSound();
 
         if (planet.link) {
             window.open(planet.link, '_blank');
@@ -185,7 +190,7 @@ const App: React.FC = () => {
             setCurrentPage('main');
         }
         setBullets([]);
-    }, [createRandomPlanet]);
+    }, [createRandomPlanet, playHitSound]);
 
     const handleExplosionComplete = useCallback(() => {
         setIsExploding(false);
@@ -232,7 +237,8 @@ const App: React.FC = () => {
         const angle = Math.atan2(clientY - centerY, clientX - centerX);
         setBullets(prevBullets => [...prevBullets, { id: bulletIdCounter, x: centerX, y: centerY, angle }]);
         setBulletIdCounter(prev => prev + 1);
-    }, [bulletIdCounter, isExploding]);
+        playShootSound();
+    }, [bulletIdCounter, isExploding, playShootSound]);
 
     const memoizedPlanets = useMemo(() => planets.map((planet, index) => (
         <Planet key={index} {...planet} />
@@ -250,6 +256,67 @@ const App: React.FC = () => {
         />
     )), [bullets, planets, handlePlanetHit, handleBulletOffscreen]);
 
+    const renderPageContent = useCallback(() => {
+        const commonStyle: React.CSSProperties = {
+            position: 'absolute',
+            top: '10%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: isMobile ? '24px' : '48px',
+            color: 'white',
+            zIndex: 1000,
+            transition: 'opacity 0.5s ease-in-out',
+        };
+
+        switch (currentPage) {
+            case 'main':
+                return (
+                    <>
+                        {showFirstText && (
+                            <TypedText
+                                text="Hi, I am Mriganka Dey"
+                                style={commonStyle}
+                                collidable={true}
+                                planets={planets}
+                                bullets={bullets}
+                            />
+                        )}
+                        {showSecondText && (
+                            <TypedText
+                                text="Welcome to my portfolio"
+                                style={commonStyle}
+                                collidable={true}
+                                planets={planets}
+                                bullets={bullets}
+                            />
+                        )}
+                    </>
+                );
+            case 'projects':
+                return (
+                    <TypedText
+                        text="Explore my projects"
+                        style={commonStyle}
+                        collidable={true}
+                        planets={planets}
+                        bullets={bullets}
+                    />
+                );
+            case 'contact':
+                return (
+                    <TypedText
+                        text="Get in touch with me"
+                        style={commonStyle}
+                        collidable={true}
+                        planets={planets}
+                        bullets={bullets}
+                    />
+                );
+            default:
+                return null;
+        }
+    }, [currentPage, showFirstText, showSecondText, isMobile, planets, bullets]);
+
     return (
         <div
             onClick={handleInteraction}
@@ -259,14 +326,17 @@ const App: React.FC = () => {
             style={{
                 width: '100vw',
                 height: '100vh',
-                background: 'black',
+                background: 'linear-gradient(to bottom, #000000, #1a1a2e)',
                 cursor: 'none',
                 overflow: 'hidden',
                 position: 'relative',
                 fontFamily: '"Space Mono", monospace',
             }}
         >
+            <BackgroundMusic />
             <SpaceBackground />
+            <AmbientLight />
+            <ParticleSystem />
             <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0 }}>
                 {memoizedPlanets}
                 {memoizedBullets}
@@ -276,55 +346,29 @@ const App: React.FC = () => {
                 <ExplosionTransition
                     centerX={explosionCenter.x}
                     centerY={explosionCenter.y}
-                    color={planets.find(p => p.label === currentPage)?.color || '#FFFFFF'}
+                    color={planets.find(p => p.x === explosionCenter.x && p.y === explosionCenter.y)?.color || '#FFFFFF'}
                     onAnimationComplete={handleExplosionComplete}
                 />
             )}
             <Crosshair />
-            {showFirstText && (
-                <TypedText
-                    text="Hi, I am Mriganka Dey"
-                    style={{
-                        position: 'absolute',
-                        top: '10%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        fontSize: isMobile ? '24px' : '48px',
-                        color: 'white',
-                        zIndex: 1000,
-                    }}
-                />
-            )}
-            {showSecondText && (
-                <TypedText
-                    text="You are in my portfolio"
-                    style={{
-                        position: 'absolute',
-                        top: '10%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        fontSize: isMobile ? '24px' : '48px',
-                        color: 'white',
-                        zIndex: 1000,
-                    }}
-                />
-            )}
+            {renderPageContent()}
         </div>
     );
 };
 
 const SpaceBackground: React.FC = React.memo(() => {
-    const stars = useMemo(() => [...Array(200)].map((_, i) => ({
+    const stars = useMemo(() => [...Array(300)].map((_, i) => ({
         key: i,
         style: {
             position: 'absolute' as const,
-            width: `${Math.random() * 2 + 1}px`,
-            height: `${Math.random() * 2 + 1}px`,
+            width: `${Math.random() * 3 + 1}px`,
+            height: `${Math.random() * 3 + 1}px`,
             backgroundColor: `rgba(255, 255, 255, ${Math.random() * 0.7 + 0.3})`,
             borderRadius: '50%',
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
-            animation: `twinkle ${Math.random() * 10 + 10}s linear infinite`
+            animation: `twinkle ${Math.random() * 10 + 10}s linear infinite`,
+            boxShadow: '0 0 10px rgba(255, 255, 255, 0.5)'
         }
     })), []);
 
@@ -335,11 +379,25 @@ const SpaceBackground: React.FC = React.memo(() => {
             left: 0,
             width: '100%',
             height: '100%',
-            background: 'black',
+            background: 'radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%)',
             overflow: 'hidden'
         }}>
             {stars.map(star => <div key={star.key} style={star.style} />)}
         </div>
+    );
+});
+
+const AmbientLight: React.FC = React.memo(() => {
+    return (
+        <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 70%)',
+            pointerEvents: 'none'
+        }} />
     );
 });
 

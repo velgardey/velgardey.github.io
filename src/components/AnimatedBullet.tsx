@@ -21,7 +21,7 @@ const AnimatedBullet: React.FC<AnimatedBulletProps> = ({
     const bulletRef = useRef<SVGCircleElement>(null);
     const [position, setPosition] = useState({ x: startX, y: startY });
     const [isCollided, setIsCollided] = useState(false);
-    const speed = 5;
+    const speed = 15;
 
     useEffect(() => {
         if (isCollided) {
