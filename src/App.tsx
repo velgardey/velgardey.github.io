@@ -39,7 +39,7 @@ const App: React.FC = () => {
     const [spacecraftPosition, setSpacecraftPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
     const animationFrameRef = useRef<number>();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
+    const isMobile = useMediaQuery({ query: '(max-width: 720px)' });
     const lastTouchTimeRef = useRef(0);
 
     const [playShootSound] = useSound(shootSound);
