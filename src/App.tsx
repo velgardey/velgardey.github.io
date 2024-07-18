@@ -179,7 +179,7 @@ const App: React.FC = () => {
         } else if (planet.label === 'Back') {
             setNextPlanets([
                 createRandomPlanet('Projects', '#3A86FF'),
-                createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/your-resume-link'),
+                createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1ioZ9AmWRulxvjZvDBzTtgvacD6isvvW4/view?usp=sharing'),
                 createRandomPlanet('Contact', '#FF006E'),
             ]);
             setCurrentPage('main');
