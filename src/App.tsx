@@ -168,11 +168,11 @@ const App: React.FC = () => {
             setCurrentPage('projects');
         } else if (planet.label === 'Contact') {
             setNextPlanets([
-                createRandomPlanet('LinkedIn', '#0077B5', 'https://www.linkedin.com/in/yourusername'),
-                createRandomPlanet('GitHub', '#6e5494', 'https://github.com/yourusername'),
-                createRandomPlanet('Twitter', '#1DA1F2', 'https://twitter.com/yourusername'),
-                createRandomPlanet('Discord', '#7289DA', 'https://discord.gg/yourinvite'),
-                createRandomPlanet('Instagram', '#E1306C', 'https://www.instagram.com/yourusername'),
+                createRandomPlanet('LinkedIn', '#0077B5', 'https://www.linkedin.com/in/mrigankadey/'),
+                createRandomPlanet('GitHub', '#6e5494', 'https://github.com/Velgarde'),
+                createRandomPlanet('Twitter', '#1DA1F2', 'https://x.com/velgardey'),
+                createRandomPlanet('Discord', '#7289DA', 'https://discordapp.com/users/468278174849957899'),
+                createRandomPlanet('Instagram', '#E1306C', 'https://www.instagram.com/velgardey/'),
                 createRandomPlanet('Back', '#FB5607'),
             ]);
             setCurrentPage('contact');
