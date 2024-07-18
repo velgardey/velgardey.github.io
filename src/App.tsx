@@ -35,10 +35,12 @@ const App: React.FC = () => {
     const [showFirstText, setShowFirstText] = useState(false);
     const [showSecondText, setShowSecondText] = useState(false);
     const [permanentTitle, setPermanentTitle] = useState<string | null>(null);
+    const [permanentTitleOpacity, setPermanentTitleOpacity] = useState(0);
     const [spacecraftPosition, setSpacecraftPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
     const animationFrameRef = useRef<number>();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
+    const lastTouchTimeRef = useRef(0);
 
     const [playShootSound] = useSound(shootSound);
     const [playHitSound] = useSound(hitSound);
@@ -80,6 +82,16 @@ const App: React.FC = () => {
         }, 6000);
         const timer3 = setTimeout(() => {
             setShowSecondText(false);
+            // Start fading in the permanent title
+            const fadeInInterval = setInterval(() => {
+                setPermanentTitleOpacity(prev => {
+                    if (prev >= 1) {
+                        clearInterval(fadeInInterval);
+                        return 1;
+                    }
+                    return prev + 0.1;
+                });
+            }, 100);
         }, 11000);
 
         return () => {
@@ -197,6 +209,7 @@ const App: React.FC = () => {
             setPermanentTitle(null);
         }
         setBullets([]);
+        setPermanentTitleOpacity(0);
     }, [createRandomPlanet, playHitSound]);
 
     const handleExplosionComplete = useCallback(() => {
@@ -206,6 +219,16 @@ const App: React.FC = () => {
             setPlanets(nextPlanets);
             setNextPlanets(null);
         }
+        // Start fading in the permanent title
+        const fadeInInterval = setInterval(() => {
+            setPermanentTitleOpacity(prev => {
+                if (prev >= 1) {
+                    clearInterval(fadeInInterval);
+                    return 1;
+                }
+                return prev + 0.1;
+            });
+        }, 100);
     }, [nextPlanets]);
 
     const handleBulletOffscreen = useCallback((id: number) => {
@@ -238,14 +261,25 @@ const App: React.FC = () => {
         if ('touches' in e) {
             clientX = e.touches[0].clientX;
             clientY = e.touches[0].clientY;
+
+            // Prevent rapid firing on mobile
+            const now = Date.now();
+            if (now - lastTouchTimeRef.current < 300) {
+                return;
+            }
+            lastTouchTimeRef.current = now;
         } else {
             clientX = e.clientX;
             clientY = e.clientY;
         }
 
         const angle = Math.atan2(clientY - centerY, clientX - centerX);
-        setBullets(prevBullets => [...prevBullets, { id: bulletIdCounter, x: centerX, y: centerY, angle }]);
+
+        // Always shoot a single bullet, regardless of device type
+        const newBullet = { id: bulletIdCounter, x: centerX, y: centerY, angle };
+        setBullets(prevBullets => [...prevBullets, newBullet]);
         setBulletIdCounter(prev => prev + 1);
+
         playShootSound();
     }, [bulletIdCounter, isExploding, playShootSound]);
 
@@ -427,6 +461,8 @@ const App: React.FC = () => {
                     color: 'white',
                     fontWeight: 'bold',
                     textShadow: '0 0 10px rgba(255,255,255,0.5)',
+                    opacity: permanentTitleOpacity,
+                    transition: 'opacity 0.5s ease-in-out',
                 }}>
                     {permanentTitle}
                 </div>
