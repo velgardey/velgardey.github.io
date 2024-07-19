@@ -38,7 +38,6 @@ const App: React.FC = () => {
     const [permanentTitleOpacity, setPermanentTitleOpacity] = useState(0);
     const [spacecraftPosition, setSpacecraftPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
     const animationFrameRef = useRef<number>();
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
     const lastTouchTimeRef = useRef(0);
 
@@ -180,9 +179,9 @@ const App: React.FC = () => {
 
         if (planet.label === 'Projects') {
             setNextPlanets([
-                createRandomPlanet('WebSocket Chat', '#3A86FF', 'http://13.235.103.165/'),
+                createRandomPlanet('CHET', '#3A86FF', 'http://13.235.103.165/'),
                 createRandomPlanet('Hangman', '#8338EC', 'https://velgarde.github.io/hangman/'),
-                createRandomPlanet('TicTacToe', '#FF006E', 'https://velgarde.github.io/tic-tac-toe/'),
+                createRandomPlanet('Tic-Tac-Toe', '#FF006E', 'https://velgarde.github.io/tic-tac-toe/'),
                 createRandomPlanet('Back', '#FB5607'),
             ]);
             setCurrentPage('projects');
@@ -312,57 +311,6 @@ const App: React.FC = () => {
         />
     )), [bullets, planets, handlePlanetHit, handleBulletOffscreen]);
 
-    const renderMobileMenu = () => {
-        if (!isMobile) return null;
-
-        return (
-            <div style={{
-                position: 'fixed',
-                top: 10,
-                right: 10,
-                zIndex: 2000,
-            }}>
-                <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: '40px',
-                    height: '40px',
-                    fontSize: '24px',
-                    color: 'white',
-                    cursor: 'pointer',
-                }}>
-                    ☰
-                </button>
-                {isMenuOpen && (
-                    <div style={{
-                        position: 'absolute',
-                        top: '50px',
-                        right: 0,
-                        background: 'rgba(0, 0, 0, 0.8)',
-                        padding: '10px',
-                        borderRadius: '5px',
-                    }}>
-                        <button onClick={() => handlePlanetHit({ label: 'Projects' } as Planet)} style={mobileMenuButtonStyle}>Projects</button>
-                        <button onClick={() => handlePlanetHit({ label: 'Contact' } as Planet)} style={mobileMenuButtonStyle}>Contact</button>
-                        <button onClick={() => window.open('https://drive.google.com/file/d/1ioZ9AmWRulxvjZvDBzTtgvacD6isvvW4/view?usp=sharing', '_blank')} style={mobileMenuButtonStyle}>Resume</button>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const mobileMenuButtonStyle: React.CSSProperties = {
-        display: 'block',
-        width: '100%',
-        padding: '10px',
-        margin: '5px 0',
-        background: 'none',
-        border: '1px solid white',
-        color: 'white',
-        cursor: 'pointer',
-    };
-
     const renderPageContent = useCallback(() => {
         const commonStyle: React.CSSProperties = {
             position: 'absolute',
@@ -480,7 +428,6 @@ const App: React.FC = () => {
                     {permanentTitle}
                 </div>
             )}
-            {renderMobileMenu()}
         </div>
     );
 };
