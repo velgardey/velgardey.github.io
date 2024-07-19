@@ -1,5 +1,3 @@
-// src/components/Planet.tsx
-
 import React from 'react';
 
 interface PlanetProps {
@@ -10,7 +8,7 @@ interface PlanetProps {
     color: string;
 }
 
-const Planet: React.FC<PlanetProps> = ({ x, y, radius, label, color }) => {
+const Planet: React.FC<PlanetProps> = React.memo(({ x, y, radius, label, color }) => {
     const fontSize = Math.min(radius / 3, 14);
     const words = label.split(' ');
 
@@ -51,6 +49,6 @@ const Planet: React.FC<PlanetProps> = ({ x, y, radius, label, color }) => {
             </text>
         </g>
     );
-};
+});
 
 export default Planet;

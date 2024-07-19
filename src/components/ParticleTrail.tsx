@@ -1,13 +1,21 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 
 interface ParticleTrailProps {
     x: number;
     y: number;
 }
 
-const ParticleTrail: React.FC<ParticleTrailProps> = ({ x, y }) => {
+const ParticleTrail: React.FC<ParticleTrailProps> = React.memo(({ x, y }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const particlesRef = useRef<Array<{ x: number; y: number; size: number; color: string; life: number }>>([]);
+
+    const createParticle = useMemo(() => () => ({
+        x,
+        y,
+        size: Math.random() * 3 + 1,
+        color: `hsla(${Math.random() * 60 + 15}, 100%, 50%, ${Math.random() * 0.5 + 0.5})`,
+        life: 30
+    }), [x, y]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -18,14 +26,6 @@ const ParticleTrail: React.FC<ParticleTrailProps> = ({ x, y }) => {
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-
-        const createParticle = () => ({
-            x,
-            y,
-            size: Math.random() * 3 + 1,
-            color: `hsla(${Math.random() * 60 + 15}, 100%, 50%, ${Math.random() * 0.5 + 0.5})`,
-            life: 30
-        });
 
         const animate = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -52,9 +52,9 @@ const ParticleTrail: React.FC<ParticleTrailProps> = ({ x, y }) => {
         return () => {
             particlesRef.current = [];
         };
-    }, [x, y]);
+    }, [createParticle]);
 
     return <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }} />;
-};
+});
 
-export default React.memo(ParticleTrail);
+export default ParticleTrail;

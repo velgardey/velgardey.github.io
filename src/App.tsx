@@ -39,16 +39,16 @@ const App: React.FC = () => {
     const [spacecraftPosition, setSpacecraftPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
     const animationFrameRef = useRef<number>();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const isMobile = useMediaQuery({ query: '(max-width: 720px)' });
+    const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
     const lastTouchTimeRef = useRef(0);
 
     const [playShootSound] = useSound(shootSound);
     const [playHitSound] = useSound(hitSound);
 
     const calculatePlanetRadius = useCallback((label: string) => {
-        const baseRadius = isMobile ? 40 : 60;
+        const baseRadius = isMobile ? 30 : 50;
         const textLength = label.length;
-        return Math.max(baseRadius, textLength * 6);
+        return Math.max(baseRadius, textLength * 5);
     }, [isMobile]);
 
     const createRandomPlanet = useCallback((label: string, color: string, link?: string): Planet => {
@@ -130,7 +130,6 @@ const App: React.FC = () => {
             p2.y += overlap * sin;
         }
     }, []);
-
     const movePlanets = useCallback(() => {
         setPlanets(prevPlanets => {
             const newPlanets = prevPlanets.map(planet => {
@@ -139,11 +138,11 @@ const App: React.FC = () => {
 
                 if (newX - planet.radius < 0 || newX + planet.radius > window.innerWidth) {
                     planet.vx *= -1;
-                    newX = planet.x + planet.vx;
+                    newX = Math.max(planet.radius, Math.min(window.innerWidth - planet.radius, newX));
                 }
                 if (newY - planet.radius < 0 || newY + planet.radius > window.innerHeight) {
                     planet.vy *= -1;
-                    newY = planet.y + planet.vy;
+                    newY = Math.max(planet.radius, Math.min(window.innerHeight - planet.radius, newY));
                 }
 
                 return { ...planet, x: newX, y: newY };
@@ -274,14 +273,28 @@ const App: React.FC = () => {
         }
 
         const angle = Math.atan2(clientY - centerY, clientX - centerX);
+        setSpacecraftRotation(angle + Math.PI / 2);
 
-        // Always shoot a single bullet, regardless of device type
         const newBullet = { id: bulletIdCounter, x: centerX, y: centerY, angle };
         setBullets(prevBullets => [...prevBullets, newBullet]);
         setBulletIdCounter(prev => prev + 1);
 
         playShootSound();
     }, [bulletIdCounter, isExploding, playShootSound]);
+
+    const handleResize = useCallback(() => {
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        setSpacecraftPosition({ x: centerX, y: centerY });
+        initializePlanets();
+    }, [initializePlanets]);
+
+    useEffect(() => {
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, [handleResize]);
 
     const memoizedPlanets = useMemo(() => planets.map((planet, index) => (
         <Planet key={index} {...planet} />
