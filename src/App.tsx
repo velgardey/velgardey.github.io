@@ -502,17 +502,35 @@ const Crosshair: React.FC = React.memo(() => {
             style={{
                 position: 'fixed',
                 pointerEvents: 'none',
-                left: position.x - 15,
-                top: position.y - 15,
+                left: position.x - 20,
+                top: position.y - 20,
                 zIndex: 9999,
             }}
-            width="30"
-            height="30"
-            viewBox="0 0 30 30"
+            width="40"
+            height="40"
+            viewBox="0 0 40 40"
         >
-            <circle cx="15" cy="15" r="13" stroke="white" strokeWidth="2" fill="none" />
-            <line x1="15" y1="0" x2="15" y2="30" stroke="white" strokeWidth="2" />
-            <line x1="0" y1="15" x2="30" y2="15" stroke="white" strokeWidth="2" />
+            {/* Outer circle */}
+            <circle cx="20" cy="20" r="18" stroke="#00FFFF" strokeWidth="1" fill="none" opacity="0.5">
+                <animate attributeName="r" from="15" to="20" dur="1s" repeatCount="indefinite" />
+            </circle>
+
+            {/* Inner circle */}
+            <circle cx="20" cy="20" r="5" fill="#00FFFF" opacity="0.7">
+                <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.5s" repeatCount="indefinite" />
+            </circle>
+
+            {/* Crosshair lines */}
+            <line x1="20" y1="0" x2="20" y2="15" stroke="#00FFFF" strokeWidth="1" />
+            <line x1="20" y1="25" x2="20" y2="40" stroke="#00FFFF" strokeWidth="1" />
+            <line x1="0" y1="20" x2="15" y2="20" stroke="#00FFFF" strokeWidth="1" />
+            <line x1="25" y1="20" x2="40" y2="20" stroke="#00FFFF" strokeWidth="1" />
+
+            {/* Diagonal lines */}
+            <line x1="5" y1="5" x2="15" y2="15" stroke="#00FFFF" strokeWidth="1" opacity="0.5" />
+            <line x1="35" y1="5" x2="25" y2="15" stroke="#00FFFF" strokeWidth="1" opacity="0.5" />
+            <line x1="5" y1="35" x2="15" y2="25" stroke="#00FFFF" strokeWidth="1" opacity="0.5" />
+            <line x1="35" y1="35" x2="25" y2="25" stroke="#00FFFF" strokeWidth="1" opacity="0.5" />
         </svg>
     );
 });
