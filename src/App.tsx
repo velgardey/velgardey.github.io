@@ -180,6 +180,7 @@ const App: React.FC = () => {
         if (planet.label === 'Projects') {
             setNextPlanets([
                 createRandomPlanet('CHET', '#3A86FF', 'http://13.235.103.165/'),
+                createRandomPlanet('Chess Rogue', '#75d34d', 'https://velgarde.github.io/chess-rogue/'),
                 createRandomPlanet('Hangman', '#8338EC', 'https://velgarde.github.io/hangman/'),
                 createRandomPlanet('Tic-Tac-Toe', '#FF006E', 'https://velgarde.github.io/tic-tac-toe/'),
                 createRandomPlanet('Back', '#FB5607'),
