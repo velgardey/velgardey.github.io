@@ -9,7 +9,11 @@ interface Particle {
     color: string;
 }
 
-const ParticleSystem: React.FC = () => {
+interface ParticleSystemProps {
+    particleCount: number;
+}
+
+const ParticleSystem: React.FC<ParticleSystemProps> = React.memo(({ particleCount }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const particlesRef = useRef<Particle[]>([]);
 
@@ -37,9 +41,7 @@ const ParticleSystem: React.FC = () => {
             color: `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.5})`,
         });
 
-        for (let i = 0; i < 100; i++) {
-            particlesRef.current.push(createParticle());
-        }
+        particlesRef.current = Array.from({ length: particleCount }, createParticle);
 
         const animate = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -65,9 +67,9 @@ const ParticleSystem: React.FC = () => {
         return () => {
             window.removeEventListener('resize', resizeCanvas);
         };
-    }, []);
+    }, [particleCount]);
 
     return <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }} />;
-};
+});
 
 export default ParticleSystem;

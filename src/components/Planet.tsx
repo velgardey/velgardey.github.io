@@ -9,11 +9,11 @@ interface PlanetProps {
 }
 
 const Planet: React.FC<PlanetProps> = React.memo(({ x, y, radius, label, color }) => {
-    const fontSize = Math.min(radius / 3, 14);
+    const fontSize = Math.min(radius / 3, 16);
     const words = label.split(' ');
 
     return (
-        <g>
+        <g role="button" aria-label={label} tabIndex={0}>
             <defs>
                 <filter id={`glow-${label}`}>
                     <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -22,12 +22,16 @@ const Planet: React.FC<PlanetProps> = React.memo(({ x, y, radius, label, color }
                         <feMergeNode in="SourceGraphic"/>
                     </feMerge>
                 </filter>
+                <radialGradient id={`gradient-${label}`}>
+                    <stop offset="0%" stopColor={color} />
+                    <stop offset="100%" stopColor={`${color}88`} />
+                </radialGradient>
             </defs>
             <circle
                 cx={x}
                 cy={y}
                 r={radius}
-                fill={color}
+                fill={`url(#gradient-${label})`}
                 filter={`url(#glow-${label})`}
                 stroke="white"
                 strokeWidth="2"

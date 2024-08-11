@@ -11,14 +11,14 @@ interface AnimatedBulletProps {
 }
 
 const AnimatedBullet: React.FC<AnimatedBulletProps> = ({
-                                                           startX,
-                                                           startY,
-                                                           angle,
-                                                           planets,
-                                                           onPlanetHit,
-                                                           onBulletOffscreen
-                                                       }) => {
-    const bulletRef = useRef<SVGCircleElement>(null);
+    startX,
+    startY,
+    angle,
+    planets,
+    onPlanetHit,
+    onBulletOffscreen
+}) => {
+    const bulletRef = useRef<SVGGElement>(null);
     const [position, setPosition] = useState({ x: startX, y: startY });
     const [isCollided, setIsCollided] = useState(false);
     const speed = 15;
@@ -66,14 +66,38 @@ const AnimatedBullet: React.FC<AnimatedBulletProps> = ({
     if (isCollided) return null;
 
     return (
-        <circle
-            ref={bulletRef}
-            cx={position.x}
-            cy={position.y}
-            r="3"
-            fill="white"
-        />
+        <g ref={bulletRef}>
+            <defs>
+                <radialGradient id="bulletGradient">
+                    <stop offset="0%" stopColor="#00FFFF" />
+                    <stop offset="100%" stopColor="#0000FF" />
+                </radialGradient>
+                <filter id="bulletGlow">
+                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                    <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+            </defs>
+            <circle
+                cx={position.x}
+                cy={position.y}
+                r="3"
+                fill="url(#bulletGradient)"
+                filter="url(#bulletGlow)"
+            />
+            <line
+                x1={position.x - Math.cos(angle) * 10}
+                y1={position.y - Math.sin(angle) * 10}
+                x2={position.x}
+                y2={position.y}
+                stroke="url(#bulletGradient)"
+                strokeWidth="2"
+                opacity="0.7"
+            />
+        </g>
     );
-};
+}
 
 export default AnimatedBullet;

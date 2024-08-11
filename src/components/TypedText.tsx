@@ -14,13 +14,20 @@ const TypedText: React.FC<TypedTextProps> = ({ text, style, collidable = false, 
     const [cursorVisible, setCursorVisible] = useState(true);
     const [opacity, setOpacity] = useState(1);
     const letterRefs = useRef<(HTMLSpanElement | null)[]>([]);
+    const textRef = useRef(text);
+    const indexRef = useRef(0);
 
     useEffect(() => {
-        let i = 0;
+        textRef.current = text;
+        indexRef.current = 0;
+        setDisplayText('');
+    }, [text]);
+
+    useEffect(() => {
         const typingInterval = setInterval(() => {
-            if (i < text.length) {
-                setDisplayText((prev) => prev + text[i]);
-                i++;
+            if (indexRef.current < textRef.current.length) {
+                setDisplayText(textRef.current.slice(0, indexRef.current + 1));
+                indexRef.current++;
             } else {
                 clearInterval(typingInterval);
                 setTimeout(() => {
@@ -45,7 +52,7 @@ const TypedText: React.FC<TypedTextProps> = ({ text, style, collidable = false, 
             clearInterval(typingInterval);
             clearInterval(cursorInterval);
         };
-    }, [text]);
+    }, []);
 
     useEffect(() => {
         if (collidable) {

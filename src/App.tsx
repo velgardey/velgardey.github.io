@@ -11,6 +11,7 @@ import hitSound from './assets/audio/explosion.wav';
 import BackgroundMusic from './components/BackgroundMusic';
 import ParticleSystem from './components/ParticleSystem';
 import ParticleTrail from './components/ParticleTrail';
+import LoadingScreen from './components/LoadingScreen';
 
 export interface Planet {
     x: number;
@@ -36,32 +37,35 @@ const App: React.FC = () => {
     const [showSecondText, setShowSecondText] = useState(false);
     const [permanentTitle, setPermanentTitle] = useState<string | null>(null);
     const [permanentTitleOpacity, setPermanentTitleOpacity] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
     const [spacecraftPosition, setSpacecraftPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
     const animationFrameRef = useRef<number>();
-    const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
+    const isMobile = useMediaQuery({ query: '(max-width: 1024px)' });
+    const particleCount = useMemo(() => isMobile ? 50 : 100, [isMobile]);
+    const starCount = useMemo(() => isMobile ? 150 : 300, [isMobile]);
     const lastTouchTimeRef = useRef(0);
 
     const [playShootSound] = useSound(shootSound);
     const [playHitSound] = useSound(hitSound);
 
     const calculatePlanetRadius = useCallback((label: string) => {
-        const baseRadius = isMobile ? 30 : 50;
+        const baseRadius = isMobile ? 30 : 60;
         const textLength = label.length;
-        return Math.max(baseRadius, textLength * 5);
+        return Math.max(baseRadius, Math.min(baseRadius * 1.5, baseRadius + textLength * (isMobile ? 1 : 2)));
     }, [isMobile]);
-
+    
     const createRandomPlanet = useCallback((label: string, color: string, link?: string): Planet => {
         const radius = calculatePlanetRadius(label);
         const x = Math.random() * (window.innerWidth - 2 * radius) + radius;
         const y = Math.random() * (window.innerHeight - 2 * radius) + radius;
-        const speed = 0.3;
+        const speed = isMobile ? 0.3 : 0.5; // Reduced speed for desktop
         const angle = Math.random() * Math.PI * 2;
         return {
             x, y, radius, label, color, link,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed
         };
-    }, [calculatePlanetRadius]);
+    }, [calculatePlanetRadius, isMobile]);
 
     const initializePlanets = useCallback(() => {
         const initialPlanets = [
@@ -129,35 +133,78 @@ const App: React.FC = () => {
             p2.y += overlap * sin;
         }
     }, []);
-    const movePlanets = useCallback(() => {
-        setPlanets(prevPlanets => {
-            const newPlanets = prevPlanets.map(planet => {
-                let newX = planet.x + planet.vx;
-                let newY = planet.y + planet.vy;
 
-                if (newX - planet.radius < 0 || newX + planet.radius > window.innerWidth) {
-                    planet.vx *= -1;
-                    newX = Math.max(planet.radius, Math.min(window.innerWidth - planet.radius, newX));
-                }
-                if (newY - planet.radius < 0 || newY + planet.radius > window.innerHeight) {
-                    planet.vy *= -1;
-                    newY = Math.max(planet.radius, Math.min(window.innerHeight - planet.radius, newY));
-                }
+  const handlePlanetCollision = useCallback((planet: Planet, objectX: number, objectY: number, objectRadius: number) => {
+    const dx = planet.x - objectX;
+    const dy = planet.y - objectY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
 
-                return { ...planet, x: newX, y: newY };
-            });
+    if (distance < planet.radius + objectRadius) {
+        const angle = Math.atan2(dy, dx);
+        const sin = Math.sin(angle);
+        const cos = Math.cos(angle);
 
-            for (let i = 0; i < newPlanets.length; i++) {
-                for (let j = i + 1; j < newPlanets.length; j++) {
-                    handleCollision(newPlanets[i], newPlanets[j]);
-                }
+        // Rotate planet's velocity
+        const vx1 = planet.vx * cos + planet.vy * sin;
+        const vy1 = planet.vy * cos - planet.vx * sin;
+
+        // Update planet's velocity (assuming the object is stationary)
+        const bounceFactorX = isMobile ? 1.2 : 1; // Increase bounce on mobile
+        const bounceFactorY = isMobile ? 1.2 : 1; // Increase bounce on mobile
+        planet.vx = (-vx1 * cos + vy1 * sin) * bounceFactorX;
+        planet.vy = (-vy1 * cos - vx1 * sin) * bounceFactorY;
+
+        // Move the planet outside the collision radius
+        const overlap = planet.radius + objectRadius - distance;
+        planet.x += overlap * cos * 1.1; // Move slightly further to prevent sticking
+        planet.y += overlap * sin * 1.1;
+    }
+}, [isMobile]);
+
+const movePlanets = useCallback(() => {
+    setPlanets(prevPlanets => {
+        const newPlanets = prevPlanets.map(planet => {
+            let newX = planet.x + planet.vx;
+            let newY = planet.y + planet.vy;
+
+            if (newX - planet.radius < 0 || newX + planet.radius > window.innerWidth) {
+                planet.vx *= -1;
+                newX = Math.max(planet.radius, Math.min(window.innerWidth - planet.radius, newX));
+            }
+            if (newY - planet.radius < 0 || newY + planet.radius > window.innerHeight) {
+                planet.vy *= -1;
+                newY = Math.max(planet.radius, Math.min(window.innerHeight - planet.radius, newY));
             }
 
-            return newPlanets;
+            // Maintain constant speed
+            const speed = Math.sqrt(planet.vx * planet.vx + planet.vy * planet.vy);
+            const targetSpeed = isMobile ? 0.3 : 0.5;
+            if (speed !== targetSpeed) {
+                const factor = targetSpeed / speed;
+                planet.vx *= factor;
+                planet.vy *= factor;
+            }
+
+            // Check collision with spacecraft
+            handlePlanetCollision(planet, spacecraftPosition.x, spacecraftPosition.y, 25);
+
+            // Check collision with text (assuming text is at the center of the screen)
+            handlePlanetCollision(planet, window.innerWidth / 2, window.innerHeight / 2, 100);
+
+            return { ...planet, x: newX, y: newY };
         });
 
-        animationFrameRef.current = requestAnimationFrame(movePlanets);
-    }, [handleCollision]);
+        for (let i = 0; i < newPlanets.length; i++) {
+            for (let j = i + 1; j < newPlanets.length; j++) {
+                handleCollision(newPlanets[i], newPlanets[j]);
+            }
+        }
+
+        return newPlanets;
+    });
+
+    animationFrameRef.current = requestAnimationFrame(movePlanets);
+}, [handleCollision, handlePlanetCollision, spacecraftPosition, isMobile]);
 
     useEffect(() => {
         animationFrameRef.current = requestAnimationFrame(movePlanets);
@@ -243,10 +290,10 @@ const App: React.FC = () => {
     }, []);
 
     const handleTouchMove = useCallback((e: React.TouchEvent) => {
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
         const touch = e.touches[0];
-        const angle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX);
+        const centerX = touch.clientX;
+        const centerY = touch.clientY;
+        const angle = Math.atan2(touch.clientY - window.innerHeight / 2, touch.clientX - window.innerWidth / 2);
         setSpacecraftRotation(angle + Math.PI / 2);
         setSpacecraftPosition({ x: centerX, y: centerY });
     }, []);
@@ -256,14 +303,14 @@ const App: React.FC = () => {
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
         let clientX, clientY;
-
+    
         if ('touches' in e) {
             clientX = e.touches[0].clientX;
             clientY = e.touches[0].clientY;
-
+    
             // Prevent rapid firing on mobile
             const now = Date.now();
-            if (now - lastTouchTimeRef.current < 300) {
+            if (now - lastTouchTimeRef.current < 500) {
                 return;
             }
             lastTouchTimeRef.current = now;
@@ -271,14 +318,14 @@ const App: React.FC = () => {
             clientX = e.clientX;
             clientY = e.clientY;
         }
-
+    
         const angle = Math.atan2(clientY - centerY, clientX - centerX);
         setSpacecraftRotation(angle + Math.PI / 2);
-
+    
         const newBullet = { id: bulletIdCounter, x: centerX, y: centerY, angle };
         setBullets(prevBullets => [...prevBullets, newBullet]);
         setBulletIdCounter(prev => prev + 1);
-
+    
         playShootSound();
     }, [bulletIdCounter, isExploding, playShootSound]);
 
@@ -296,21 +343,21 @@ const App: React.FC = () => {
         };
     }, [handleResize]);
 
-    const memoizedPlanets = useMemo(() => planets.map((planet, index) => (
-        <Planet key={index} {...planet} />
-    )), [planets]);
+const memoizedPlanets = useMemo(() => planets.map((planet, index) => (
+    <Planet key={index} {...planet} />
+)), [planets]);
 
-    const memoizedBullets = useMemo(() => bullets.map((bullet) => (
-        <AnimatedBullet
-            key={bullet.id}
-            startX={bullet.x}
-            startY={bullet.y}
-            angle={bullet.angle}
-            planets={planets}
-            onPlanetHit={handlePlanetHit}
-            onBulletOffscreen={() => handleBulletOffscreen(bullet.id)}
-        />
-    )), [bullets, planets, handlePlanetHit, handleBulletOffscreen]);
+const memoizedBullets = useMemo(() => bullets.map((bullet) => (
+    <AnimatedBullet
+        key={bullet.id}
+        startX={bullet.x}
+        startY={bullet.y}
+        angle={bullet.angle}
+        planets={planets}
+        onPlanetHit={handlePlanetHit}
+        onBulletOffscreen={() => handleBulletOffscreen(bullet.id)}
+    />
+)), [bullets, planets, handlePlanetHit, handleBulletOffscreen]);
 
     const renderPageContent = useCallback(() => {
         const commonStyle: React.CSSProperties = {
@@ -373,68 +420,81 @@ const App: React.FC = () => {
         }
     }, [currentPage, showFirstText, showSecondText, isMobile, planets, bullets]);
 
+    useEffect(() => {
+        // Simulate loading time
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 2000);
+
+        return () => clearTimeout(timer);
+    }, []);
+
     return (
-        <div
-            onClick={handleInteraction}
-            onTouchStart={handleInteraction}
-            onMouseMove={handleMouseMove}
-            onTouchMove={handleTouchMove}
-            style={{
-                width: '100vw',
-                height: '100vh',
-                background: 'linear-gradient(to bottom, #000000, #1a1a2e)',
-                cursor: 'none',
-                overflow: 'hidden',
-                position: 'relative',
-                fontFamily: '"Space Mono", monospace',
-            }}
-        >
-            <BackgroundMusic />
-            <SpaceBackground />
-            <AmbientLight />
-            <ParticleSystem />
-            <ParticleTrail x={spacecraftPosition.x} y={spacecraftPosition.y} />
-            <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0 }}>
-                {memoizedPlanets}
-                {memoizedBullets}
-            </svg>
-            <Spacecraft
-                rotation={spacecraftRotation}
-                x={spacecraftPosition.x}
-                y={spacecraftPosition.y}
-            />
-            {isExploding && explosionCenter && (
-                <ExplosionTransition
-                    centerX={explosionCenter.x}
-                    centerY={explosionCenter.y}
-                    color={planets.find(p => p.x === explosionCenter.x && p.y === explosionCenter.y)?.color || '#FFFFFF'}
-                    onAnimationComplete={handleExplosionComplete}
+        <>
+            {isLoading && <LoadingScreen />}
+            <div
+                onClick={handleInteraction}
+                onTouchStart={handleInteraction}
+                onMouseMove={handleMouseMove}
+                onTouchMove={handleTouchMove}
+                style={{
+                    width: '100vw',
+                    height: '100vh',
+                    background: 'linear-gradient(to bottom, #000000, #1a1a2e)',
+                    cursor: 'none',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    fontFamily: '"Space Mono", monospace',
+                    fontSize: isMobile ? '14px' : '16px',
+                }}
+            >
+                <BackgroundMusic />
+                <SpaceBackground starCount={starCount} />
+                <AmbientLight />
+                <ParticleSystem particleCount={particleCount} />
+                <ParticleTrail x={spacecraftPosition.x} y={spacecraftPosition.y} />
+                <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0 }}>
+                    {memoizedPlanets}
+                    {memoizedBullets}
+                </svg>
+                <Spacecraft
+                    rotation={spacecraftRotation}
+                    x={spacecraftPosition.x}
+                    y={spacecraftPosition.y}
                 />
-            )}
-            {!isMobile && <Crosshair />}
-            {renderPageContent()}
-            {permanentTitle && (
-                <div style={{
-                    position: 'absolute',
-                    bottom: '5%',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontSize: isMobile ? '24px' : '36px',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    textShadow: '0 0 10px rgba(255,255,255,0.5)',
-                    opacity: permanentTitleOpacity,
-                    transition: 'opacity 0.5s ease-in-out',
-                }}>
-                    {permanentTitle}
-                </div>
-            )}
-        </div>
+                {isExploding && explosionCenter && (
+                    <ExplosionTransition
+                        centerX={explosionCenter.x}
+                        centerY={explosionCenter.y}
+                        color={planets.find(p => p.x === explosionCenter.x && p.y === explosionCenter.y)?.color || '#FFFFFF'}
+                        onAnimationComplete={handleExplosionComplete}
+                    />
+                )}
+                {!isMobile && <Crosshair />}
+                {renderPageContent()}
+                {permanentTitle && (
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '5%',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        fontSize: isMobile ? '24px' : '36px',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        textShadow: '0 0 10px rgba(255,255,255,0.5)',
+                        opacity: permanentTitleOpacity,
+                        transition: 'opacity 0.5s ease-in-out',
+                    }}>
+                        {permanentTitle}
+                    </div>
+                )}
+            </div>
+        </>
     );
 };
 
-const SpaceBackground: React.FC = React.memo(() => {
-    const stars = useMemo(() => [...Array(300)].map((_, i) => ({
+const SpaceBackground: React.FC<{ starCount: number }> = React.memo(({ starCount }) => {
+    const stars = useMemo(() => [...Array(starCount)].map((_, i) => ({
         key: i,
         style: {
             position: 'absolute' as const,
@@ -445,9 +505,10 @@ const SpaceBackground: React.FC = React.memo(() => {
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
             animation: `twinkle ${Math.random() * 10 + 10}s linear infinite`,
-            boxShadow: '0 0 10px rgba(255, 255, 255, 0.5)'
+            boxShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
+            transform: `translateZ(${Math.random() * 100}px)`,
         }
-    })), []);
+    })), [starCount]);
 
     return (
         <div style={{
@@ -457,13 +518,13 @@ const SpaceBackground: React.FC = React.memo(() => {
             width: '100%',
             height: '100%',
             background: 'radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%)',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            perspective: '400px',
         }}>
             {stars.map(star => <div key={star.key} style={star.style} />)}
         </div>
     );
 });
-
 const AmbientLight: React.FC = React.memo(() => {
     return (
         <div style={{
