@@ -56,9 +56,14 @@ const App: React.FC = () => {
     
     const createRandomPlanet = useCallback((label: string, color: string, link?: string): Planet => {
         const radius = calculatePlanetRadius(label);
-        const x = Math.random() * (window.innerWidth - 2 * radius) + radius;
-        const y = Math.random() * (window.innerHeight - 2 * radius) + radius;
-        const speed = isMobile ? 0.3 : 0.5; // Reduced speed for desktop
+        const spacecraftRadius = 30; // Adjust this value based on your spacecraft size
+        let x, y;
+        do {
+            x = Math.random() * (window.innerWidth - 2 * radius) + radius;
+            y = Math.random() * (window.innerHeight - 2 * radius) + radius;
+        } while (Math.sqrt(Math.pow(x - window.innerWidth / 2, 2) + Math.pow(y - window.innerHeight / 2, 2)) < radius + spacecraftRadius);
+        
+        const speed = isMobile ? 0.3 : 0.5;
         const angle = Math.random() * Math.PI * 2;
         return {
             x, y, radius, label, color, link,
@@ -134,77 +139,92 @@ const App: React.FC = () => {
         }
     }, []);
 
-  const handlePlanetCollision = useCallback((planet: Planet, objectX: number, objectY: number, objectRadius: number) => {
-    const dx = planet.x - objectX;
-    const dy = planet.y - objectY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    if (distance < planet.radius + objectRadius) {
-        const angle = Math.atan2(dy, dx);
-        const sin = Math.sin(angle);
-        const cos = Math.cos(angle);
-
-        // Rotate planet's velocity
-        const vx1 = planet.vx * cos + planet.vy * sin;
-        const vy1 = planet.vy * cos - planet.vx * sin;
-
-        // Update planet's velocity (assuming the object is stationary)
-        const bounceFactorX = isMobile ? 1.2 : 1; // Increase bounce on mobile
-        const bounceFactorY = isMobile ? 1.2 : 1; // Increase bounce on mobile
-        planet.vx = (-vx1 * cos + vy1 * sin) * bounceFactorX;
-        planet.vy = (-vy1 * cos - vx1 * sin) * bounceFactorY;
-
-        // Move the planet outside the collision radius
-        const overlap = planet.radius + objectRadius - distance;
-        planet.x += overlap * cos * 1.1; // Move slightly further to prevent sticking
-        planet.y += overlap * sin * 1.1;
-    }
-}, [isMobile]);
-
-const movePlanets = useCallback(() => {
-    setPlanets(prevPlanets => {
-        const newPlanets = prevPlanets.map(planet => {
-            let newX = planet.x + planet.vx;
-            let newY = planet.y + planet.vy;
-
-            if (newX - planet.radius < 0 || newX + planet.radius > window.innerWidth) {
-                planet.vx *= -1;
-                newX = Math.max(planet.radius, Math.min(window.innerWidth - planet.radius, newX));
-            }
-            if (newY - planet.radius < 0 || newY + planet.radius > window.innerHeight) {
-                planet.vy *= -1;
-                newY = Math.max(planet.radius, Math.min(window.innerHeight - planet.radius, newY));
-            }
-
-            // Maintain constant speed
-            const speed = Math.sqrt(planet.vx * planet.vx + planet.vy * planet.vy);
-            const targetSpeed = isMobile ? 0.3 : 0.5;
-            if (speed !== targetSpeed) {
-                const factor = targetSpeed / speed;
+    const handlePlanetCollision = useCallback((planet: Planet, objectX: number, objectY: number, objectRadius: number) => {
+        const dx = planet.x - objectX;
+        const dy = planet.y - objectY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+    
+        if (distance < planet.radius + objectRadius) {
+            const angle = Math.atan2(dy, dx);
+            const sin = Math.sin(angle);
+            const cos = Math.cos(angle);
+    
+            // Rotate planet's velocity
+            const vx1 = planet.vx * cos + planet.vy * sin;
+            const vy1 = planet.vy * cos - planet.vx * sin;
+    
+            // Update planet's velocity (assuming the object is stationary)
+            const bounceFactorX = isMobile ? 1.5 : 1.2;
+            const bounceFactorY = isMobile ? 1.5 : 1.2;
+            planet.vx = (-vx1 * cos + vy1 * sin) * bounceFactorX;
+            planet.vy = (-vy1 * cos - vx1 * sin) * bounceFactorY;
+    
+            // Move the planet outside the collision radius
+            const overlap = planet.radius + objectRadius - distance;
+            planet.x += overlap * cos * 1.1;
+            planet.y += overlap * sin * 1.1;
+    
+            // Ensure the planet maintains a minimum speed
+            const minSpeed = isMobile ? 0.7 : 0.5;
+            const currentSpeed = Math.sqrt(planet.vx * planet.vx + planet.vy * planet.vy);
+            if (currentSpeed < minSpeed) {
+                const factor = minSpeed / currentSpeed;
                 planet.vx *= factor;
                 planet.vy *= factor;
             }
-
-            // Check collision with spacecraft
-            handlePlanetCollision(planet, spacecraftPosition.x, spacecraftPosition.y, 25);
-
-            // Check collision with text (assuming text is at the center of the screen)
-            handlePlanetCollision(planet, window.innerWidth / 2, window.innerHeight / 2, 100);
-
-            return { ...planet, x: newX, y: newY };
-        });
-
-        for (let i = 0; i < newPlanets.length; i++) {
-            for (let j = i + 1; j < newPlanets.length; j++) {
-                handleCollision(newPlanets[i], newPlanets[j]);
-            }
+    
+            return true; // Collision occurred
         }
+        return false; // No collision
+    }, [isMobile]);
 
-        return newPlanets;
-    });
-
-    animationFrameRef.current = requestAnimationFrame(movePlanets);
-}, [handleCollision, handlePlanetCollision, spacecraftPosition, isMobile]);
+    const movePlanets = useCallback(() => {
+        setPlanets(prevPlanets => {
+            const newPlanets = prevPlanets.map(planet => {
+                let newX = planet.x + planet.vx;
+                let newY = planet.y + planet.vy;
+    
+                if (newX - planet.radius < 0 || newX + planet.radius > window.innerWidth) {
+                    planet.vx *= -1;
+                    newX = Math.max(planet.radius, Math.min(window.innerWidth - planet.radius, newX));
+                }
+                if (newY - planet.radius < 0 || newY + planet.radius > window.innerHeight) {
+                    planet.vy *= -1;
+                    newY = Math.max(planet.radius, Math.min(window.innerHeight - planet.radius, newY));
+                }
+    
+                // Check collision with spacecraft
+                const collided = handlePlanetCollision(planet, window.innerWidth / 2, window.innerHeight / 2, 30);
+    
+                if (!collided) {
+                    // Only update position if no collision occurred
+                    planet.x = newX;
+                    planet.y = newY;
+                }
+    
+                // Maintain constant speed
+                const speed = Math.sqrt(planet.vx * planet.vx + planet.vy * planet.vy);
+                const targetSpeed = isMobile ? 0.7 : 0.5;
+                if (Math.abs(speed - targetSpeed) > 0.1) {
+                    const factor = targetSpeed / speed;
+                    planet.vx *= factor;
+                    planet.vy *= factor;
+                }
+    
+                return planet;
+            });
+    
+            for (let i = 0; i < newPlanets.length; i++) {
+                for (let j = i + 1; j < newPlanets.length; j++) {
+                    handleCollision(newPlanets[i], newPlanets[j]);
+                }
+            }
+    
+            return newPlanets;
+        });
+    
+        animationFrameRef.current = requestAnimationFrame(movePlanets);
+    }, [handleCollision, handlePlanetCollision, isMobile]);
 
     useEffect(() => {
         animationFrameRef.current = requestAnimationFrame(movePlanets);
@@ -359,66 +379,73 @@ const memoizedBullets = useMemo(() => bullets.map((bullet) => (
     />
 )), [bullets, planets, handlePlanetHit, handleBulletOffscreen]);
 
-    const renderPageContent = useCallback(() => {
-        const commonStyle: React.CSSProperties = {
-            position: 'absolute',
-            top: '10%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            fontSize: isMobile ? '24px' : '48px',
-            color: 'white',
-            zIndex: 1000,
-            transition: 'opacity 0.5s ease-in-out',
-        };
+const renderPageContent = useCallback(() => {
+    const commonStyle: React.CSSProperties = {
+        position: 'absolute',
+        top: '10%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        fontSize: isMobile ? '24px' : '48px',
+        color: 'white',
+        zIndex: 1000,
+        transition: 'opacity 0.5s ease-in-out',
+        textAlign: 'center',
+    };
 
-        switch (currentPage) {
-            case 'main':
-                return (
-                    <>
-                        {showFirstText && (
-                            <TypedText
-                                text="Hi , I  am  Mriganka  Dey"
-                                style={commonStyle}
-                                collidable={true}
-                                planets={planets}
-                                bullets={bullets}
-                            />
-                        )}
-                        {showSecondText && (
-                            <TypedText
-                                text="Welcome  to  my  portfolio"
-                                style={commonStyle}
-                                collidable={true}
-                                planets={planets}
-                                bullets={bullets}
-                            />
-                        )}
-                    </>
-                );
-            case 'projects':
-                return (
-                    <TypedText
-                        text="Explore  my  projects"
-                        style={commonStyle}
-                        collidable={true}
-                        planets={planets}
-                        bullets={bullets}
-                    />
-                );
-            case 'contact':
-                return (
-                    <TypedText
-                        text="Get  in  touch  with  me"
-                        style={commonStyle}
-                        collidable={true}
-                        planets={planets}
-                        bullets={bullets}
-                    />
-                );
-            default:
-                return null;
-        }
-    }, [currentPage, showFirstText, showSecondText, isMobile, planets, bullets]);
+    const maxWidth = isMobile ? '90%' : '70%';
+
+    switch (currentPage) {
+        case 'main':
+            return (
+                <>
+                    {showFirstText && (
+                        <TypedText
+                            text="Hi , I  am  Mriganka  Dey"
+                            style={commonStyle}
+                            collidable={true}
+                            planets={planets}
+                            bullets={bullets}
+                            maxWidth={maxWidth}
+                        />
+                    )}
+                    {showSecondText && (
+                        <TypedText
+                            text="Welcome  to  my  portfolio"
+                            style={commonStyle}
+                            collidable={true}
+                            planets={planets}
+                            bullets={bullets}
+                            maxWidth={maxWidth}
+                        />
+                    )}
+                </>
+            );
+        case 'projects':
+            return (
+                <TypedText
+                    text="Explore  my  projects"
+                    style={commonStyle}
+                    collidable={true}
+                    planets={planets}
+                    bullets={bullets}
+                    maxWidth={maxWidth}
+                />
+            );
+        case 'contact':
+            return (
+                <TypedText
+                    text="Get  in  touch  with  me"
+                    style={commonStyle}
+                    collidable={true}
+                    planets={planets}
+                    bullets={bullets}
+                    maxWidth={maxWidth}
+                />
+            );
+        default:
+            return null;
+    }
+}, [currentPage, showFirstText, showSecondText, isMobile, planets, bullets]);
 
     useEffect(() => {
         // Simulate loading time

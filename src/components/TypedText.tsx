@@ -7,15 +7,17 @@ interface TypedTextProps {
     collidable?: boolean;
     planets?: Planet[];
     bullets?: Array<{ id: number; x: number; y: number; angle: number }>;
+    maxWidth?: number | string;
 }
 
-const TypedText: React.FC<TypedTextProps> = ({ text, style, collidable = false, planets = [], bullets = [] }) => {
+const TypedText: React.FC<TypedTextProps> = ({ text, style, collidable = false, planets = [], bullets = [], maxWidth = '80%' }) => {
     const [displayText, setDisplayText] = useState('');
     const [cursorVisible, setCursorVisible] = useState(true);
     const [opacity, setOpacity] = useState(1);
-    const letterRefs = useRef<(HTMLSpanElement | null)[]>([]);
+    const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
     const textRef = useRef(text);
     const indexRef = useRef(0);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         textRef.current = text;
@@ -52,34 +54,34 @@ const TypedText: React.FC<TypedTextProps> = ({ text, style, collidable = false, 
             clearInterval(typingInterval);
             clearInterval(cursorInterval);
         };
-    }, []);
+    }, [text]);
 
     useEffect(() => {
         if (collidable) {
             const checkCollisions = () => {
-                letterRefs.current.forEach((letterRef) => {
-                    if (letterRef) {
-                        const rect = letterRef.getBoundingClientRect();
-                        const letterX = rect.left + rect.width / 2;
-                        const letterY = rect.top + rect.height / 2;
+                wordRefs.current.forEach((wordRef) => {
+                    if (wordRef) {
+                        const rect = wordRef.getBoundingClientRect();
+                        const wordX = rect.left + rect.width / 2;
+                        const wordY = rect.top + rect.height / 2;
 
                         planets.forEach(planet => {
-                            const dx = letterX - planet.x;
-                            const dy = letterY - planet.y;
+                            const dx = wordX - planet.x;
+                            const dy = wordY - planet.y;
                             const distance = Math.sqrt(dx * dx + dy * dy);
                             if (distance < planet.radius + 10) {
-                                letterRef.style.color = planet.color;
+                                wordRef.style.color = planet.color;
                             }
                         });
 
                         bullets.forEach(bullet => {
-                            const dx = letterX - bullet.x;
-                            const dy = letterY - bullet.y;
+                            const dx = wordX - bullet.x;
+                            const dy = wordY - bullet.y;
                             const distance = Math.sqrt(dx * dx + dy * dy);
                             if (distance < 10) {
-                                letterRef.style.transform = 'scale(1.5)';
+                                wordRef.style.transform = 'scale(1.5)';
                                 setTimeout(() => {
-                                    if (letterRef) letterRef.style.transform = 'scale(1)';
+                                    if (wordRef) wordRef.style.transform = 'scale(1)';
                                 }, 200);
                             }
                         });
@@ -92,18 +94,25 @@ const TypedText: React.FC<TypedTextProps> = ({ text, style, collidable = false, 
         }
     }, [collidable, planets, bullets]);
 
+    const words = displayText.split(' ');
+
     return (
-        <div style={{...style, opacity}}>
-            {displayText.split('').map((char, index) => (
+        <div ref={containerRef} style={{...style, opacity, maxWidth, width: '100%', display: 'flex', flexWrap: 'wrap', justifyContent: 'center'}}>
+            {words.map((word, index) => (
                 <span
                     key={index}
-                    ref={(el) => letterRefs.current[index] = el}
-                    style={{ display: 'inline-block', transition: 'all 0.2s', marginRight: char === ' ' ? '0.25em' : '0' }}
+                    ref={(el) => wordRefs.current[index] = el}
+                    style={{
+                        display: 'inline-block',
+                        transition: 'all 0.2s',
+                        marginRight: '0.25em',
+                        marginBottom: '0.25em'
+                    }}
                 >
-                    {char}
+                    {word}
                 </span>
             ))}
-            <span style={{ opacity: cursorVisible ? 1 : 0 }}>|</span>
+            {cursorVisible && <span>|</span>}
         </div>
     );
 };
