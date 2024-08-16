@@ -13,7 +13,7 @@ const Planet: React.FC<PlanetProps> = React.memo(({ x, y, radius, label, color }
     const words = label.split(' ');
 
     return (
-        <g role="button" aria-label={label} tabIndex={0}>
+        <g role="button" aria-label={label} tabIndex={0} style={{ outline: 'none' }}>
             <defs>
                 <filter id={`glow-${label}`}>
                     <feGaussianBlur stdDeviation="3" result="coloredBlur"/>

@@ -49,9 +49,9 @@ const App: React.FC = () => {
     const [playHitSound] = useSound(hitSound);
 
     const calculatePlanetRadius = useCallback((label: string) => {
-        const baseRadius = isMobile ? 30 : 60;
+        const baseRadius = isMobile ? 40 : 70;
         const textLength = label.length;
-        return Math.max(baseRadius, Math.min(baseRadius * 1.5, baseRadius + textLength * (isMobile ? 1 : 2)));
+        return Math.max(baseRadius, Math.min(baseRadius * 1.5, baseRadius + textLength * (isMobile ? 1.5 : 3)));
     }, [isMobile]);
     
     const createRandomPlanet = useCallback((label: string, color: string, link?: string): Planet => {
@@ -75,7 +75,7 @@ const App: React.FC = () => {
     const initializePlanets = useCallback(() => {
         const initialPlanets = [
             createRandomPlanet('Projects', '#3A86FF'),
-            createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1ioZ9AmWRulxvjZvDBzTtgvacD6isvvW4/view?usp=sharing'),
+            createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1B3XgM-M_Tr4Cf52jef4tVFnIoGS92DAj/view?usp=sharing'),
             createRandomPlanet('Contact', '#FF006E'),
         ];
         setPlanets(initialPlanets);
@@ -268,7 +268,7 @@ const App: React.FC = () => {
         } else if (planet.label === 'Back') {
             setNextPlanets([
                 createRandomPlanet('Projects', '#3A86FF'),
-                createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1ioZ9AmWRulxvjZvDBzTtgvacD6isvvW4/view?usp=sharing'),
+                createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1B3XgM-M_Tr4Cf52jef4tVFnIoGS92DAj/view?usp=sharing'),
                 createRandomPlanet('Contact', '#FF006E'),
             ]);
             setCurrentPage('main');

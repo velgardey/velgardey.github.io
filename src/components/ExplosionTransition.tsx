@@ -1,4 +1,3 @@
-// src/components/ExplosionTransition.tsx
 
 import React, { useEffect, useRef } from 'react';
 
@@ -24,7 +23,7 @@ const ExplosionTransition: React.FC<ExplosionTransitionProps> = ({ centerX, cent
 
         let radius = 0;
         const maxRadius = Math.sqrt(canvas.width * canvas.width + canvas.height * canvas.height);
-        const speed = maxRadius / 60; // Adjust this value to change the explosion speed
+        const speed = maxRadius / 60;
 
         const animate = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);

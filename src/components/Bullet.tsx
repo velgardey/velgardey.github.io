@@ -34,7 +34,7 @@ const Bullet: React.FC<BulletProps> = ({ engine, x, y, angle }) => {
 
     const removeTimeout = setTimeout(() => {
       Matter.Composite.remove(engine.world, bullet);
-    }, 2000); // Remove bullet after 2 seconds
+    }, 2000);
 
     return () => {
       clearTimeout(removeTimeout);
