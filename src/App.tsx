@@ -75,7 +75,7 @@ const App: React.FC = () => {
     const initializePlanets = useCallback(() => {
         const initialPlanets = [
             createRandomPlanet('Projects', '#3A86FF'),
-            createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1B3XgM-M_Tr4Cf52jef4tVFnIoGS92DAj/view?usp=sharing'),
+            createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1Bz_0ClE3WmAYYCzOg7AQyPcFTmO7MVTO/view?usp=sharing'),
             createRandomPlanet('Contact', '#FF006E'),
         ];
         setPlanets(initialPlanets);
@@ -268,7 +268,7 @@ const App: React.FC = () => {
         } else if (planet.label === 'Back') {
             setNextPlanets([
                 createRandomPlanet('Projects', '#3A86FF'),
-                createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1B3XgM-M_Tr4Cf52jef4tVFnIoGS92DAj/view?usp=sharing'),
+                createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1Bz_0ClE3WmAYYCzOg7AQyPcFTmO7MVTO/view?usp=sharing'),
                 createRandomPlanet('Contact', '#FF006E'),
             ]);
             setCurrentPage('main');
