@@ -56,7 +56,7 @@ const App: React.FC = () => {
     
     const createRandomPlanet = useCallback((label: string, color: string, link?: string): Planet => {
         const radius = calculatePlanetRadius(label);
-        const spacecraftRadius = 30; // Adjust this value based on your spacecraft size
+        const spacecraftRadius = 30; 
         let x, y;
         do {
             x = Math.random() * (window.innerWidth - 2 * radius) + radius;
@@ -75,7 +75,7 @@ const App: React.FC = () => {
     const initializePlanets = useCallback(() => {
         const initialPlanets = [
             createRandomPlanet('Projects', '#3A86FF'),
-            createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1Bz_0ClE3WmAYYCzOg7AQyPcFTmO7MVTO/view?usp=sharing'),
+            createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1ibIMOpSetu-Vz7JqzveKY-YYypjrqwWU/view?usp=sharing'),
             createRandomPlanet('Contact', '#FF006E'),
         ];
         setPlanets(initialPlanets);
@@ -90,7 +90,6 @@ const App: React.FC = () => {
         }, 6000);
         const timer3 = setTimeout(() => {
             setShowSecondText(false);
-            // Start fading in the permanent title
             const fadeInInterval = setInterval(() => {
                 setPermanentTitleOpacity(prev => {
                     if (prev >= 1) {
@@ -149,22 +148,18 @@ const App: React.FC = () => {
             const sin = Math.sin(angle);
             const cos = Math.cos(angle);
     
-            // Rotate planet's velocity
             const vx1 = planet.vx * cos + planet.vy * sin;
             const vy1 = planet.vy * cos - planet.vx * sin;
     
-            // Update planet's velocity (assuming the object is stationary)
             const bounceFactorX = isMobile ? 1.5 : 1.2;
             const bounceFactorY = isMobile ? 1.5 : 1.2;
             planet.vx = (-vx1 * cos + vy1 * sin) * bounceFactorX;
             planet.vy = (-vy1 * cos - vx1 * sin) * bounceFactorY;
     
-            // Move the planet outside the collision radius
             const overlap = planet.radius + objectRadius - distance;
             planet.x += overlap * cos * 1.1;
             planet.y += overlap * sin * 1.1;
     
-            // Ensure the planet maintains a minimum speed
             const minSpeed = isMobile ? 0.7 : 0.5;
             const currentSpeed = Math.sqrt(planet.vx * planet.vx + planet.vy * planet.vy);
             if (currentSpeed < minSpeed) {
@@ -173,9 +168,9 @@ const App: React.FC = () => {
                 planet.vy *= factor;
             }
     
-            return true; // Collision occurred
+            return true;
         }
-        return false; // No collision
+        return false;
     }, [isMobile]);
 
     const movePlanets = useCallback(() => {
@@ -193,16 +188,13 @@ const App: React.FC = () => {
                     newY = Math.max(planet.radius, Math.min(window.innerHeight - planet.radius, newY));
                 }
     
-                // Check collision with spacecraft
                 const collided = handlePlanetCollision(planet, window.innerWidth / 2, window.innerHeight / 2, 30);
     
                 if (!collided) {
-                    // Only update position if no collision occurred
                     planet.x = newX;
                     planet.y = newY;
                 }
     
-                // Maintain constant speed
                 const speed = Math.sqrt(planet.vx * planet.vx + planet.vy * planet.vy);
                 const targetSpeed = isMobile ? 0.7 : 0.5;
                 if (Math.abs(speed - targetSpeed) > 0.1) {
@@ -268,7 +260,7 @@ const App: React.FC = () => {
         } else if (planet.label === 'Back') {
             setNextPlanets([
                 createRandomPlanet('Projects', '#3A86FF'),
-                createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1Bz_0ClE3WmAYYCzOg7AQyPcFTmO7MVTO/view?usp=sharing'),
+                createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1ibIMOpSetu-Vz7JqzveKY-YYypjrqwWU/view?usp=sharing'),
                 createRandomPlanet('Contact', '#FF006E'),
             ]);
             setCurrentPage('main');
@@ -285,7 +277,6 @@ const App: React.FC = () => {
             setPlanets(nextPlanets);
             setNextPlanets(null);
         }
-        // Start fading in the permanent title
         const fadeInInterval = setInterval(() => {
             setPermanentTitleOpacity(prev => {
                 if (prev >= 1) {
@@ -328,7 +319,6 @@ const App: React.FC = () => {
             clientX = e.touches[0].clientX;
             clientY = e.touches[0].clientY;
     
-            // Prevent rapid firing on mobile
             const now = Date.now();
             if (now - lastTouchTimeRef.current < 500) {
                 return;
@@ -448,7 +438,6 @@ const renderPageContent = useCallback(() => {
 }, [currentPage, showFirstText, showSecondText, isMobile, planets, bullets]);
 
     useEffect(() => {
-        // Simulate loading time
         const timer = setTimeout(() => {
             setIsLoading(false);
         }, 2000);
@@ -599,23 +588,19 @@ const Crosshair: React.FC = React.memo(() => {
             height="40"
             viewBox="0 0 40 40"
         >
-            {/* Outer circle */}
             <circle cx="20" cy="20" r="18" stroke="#00FFFF" strokeWidth="1" fill="none" opacity="0.5">
                 <animate attributeName="r" from="15" to="20" dur="1s" repeatCount="indefinite" />
             </circle>
 
-            {/* Inner circle */}
             <circle cx="20" cy="20" r="5" fill="#00FFFF" opacity="0.7">
                 <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.5s" repeatCount="indefinite" />
             </circle>
 
-            {/* Crosshair lines */}
             <line x1="20" y1="0" x2="20" y2="15" stroke="#00FFFF" strokeWidth="1" />
             <line x1="20" y1="25" x2="20" y2="40" stroke="#00FFFF" strokeWidth="1" />
             <line x1="0" y1="20" x2="15" y2="20" stroke="#00FFFF" strokeWidth="1" />
             <line x1="25" y1="20" x2="40" y2="20" stroke="#00FFFF" strokeWidth="1" />
 
-            {/* Diagonal lines */}
             <line x1="5" y1="5" x2="15" y2="15" stroke="#00FFFF" strokeWidth="1" opacity="0.5" />
             <line x1="35" y1="5" x2="25" y2="15" stroke="#00FFFF" strokeWidth="1" opacity="0.5" />
             <line x1="5" y1="35" x2="15" y2="25" stroke="#00FFFF" strokeWidth="1" opacity="0.5" />
