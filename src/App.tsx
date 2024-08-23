@@ -239,9 +239,9 @@ const App: React.FC = () => {
         if (planet.label === 'Projects') {
             setNextPlanets([
                 createRandomPlanet('CHET', '#3A86FF', 'http://13.235.103.165/'),
-                createRandomPlanet('Chess Rogue', '#75d34d', 'https://velgarde.github.io/chess-rogue/'),
-                createRandomPlanet('Hangman', '#8338EC', 'https://velgarde.github.io/hangman/'),
-                createRandomPlanet('Tic-Tac-Toe', '#FF006E', 'https://velgarde.github.io/tic-tac-toe/'),
+                createRandomPlanet('Chess Rogue', '#75d34d', 'https://velgardey.github.io/chess-rogue/'),
+                createRandomPlanet('Hangman', '#8338EC', 'https://velgardey.github.io/hangman/'),
+                createRandomPlanet('Tic-Tac-Toe', '#FF006E', 'https://velgardey.github.io/tic-tac-toe/'),
                 createRandomPlanet('Back', '#FB5607'),
             ]);
             setCurrentPage('projects');
@@ -249,7 +249,7 @@ const App: React.FC = () => {
         } else if (planet.label === 'Contact') {
             setNextPlanets([
                 createRandomPlanet('LinkedIn', '#0077B5', 'https://www.linkedin.com/in/mrigankadey/'),
-                createRandomPlanet('GitHub', '#6e5494', 'https://github.com/Velgarde'),
+                createRandomPlanet('GitHub', '#6e5494', 'https://github.com/velgardey'),
                 createRandomPlanet('Twitter', '#1DA1F2', 'https://x.com/velgardey'),
                 createRandomPlanet('Discord', '#7289DA', 'https://discordapp.com/users/468278174849957899'),
                 createRandomPlanet('Instagram', '#E1306C', 'https://www.instagram.com/velgardey/'),
