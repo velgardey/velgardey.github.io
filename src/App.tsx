@@ -75,7 +75,7 @@ const App: React.FC = () => {
     const initializePlanets = useCallback(() => {
         const initialPlanets = [
             createRandomPlanet('Projects', '#3A86FF'),
-            createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1ibIMOpSetu-Vz7JqzveKY-YYypjrqwWU/view?usp=sharing'),
+            createRandomPlanet('Resume', '#8338EC', 'https://drive.google.com/file/d/1CXzOWOduSh0ht00PQGUxPpgxpdD6In0n/view?usp=sharing'),
             createRandomPlanet('Contact', '#FF006E'),
         ];
         setPlanets(initialPlanets);
