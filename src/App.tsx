@@ -4,7 +4,6 @@ import Spacecraft from './components/Spacecraft';
 import AnimatedBullet from './components/AnimatedBullet';
 import Planet from './components/Planet';
 import ExplosionTransition from './components/ExplosionTransition';
-import Projects from './Projects';
 import TypedText from './components/TypedText';
 import useSound from 'use-sound';
 import shootSound from './assets/audio/shoot.wav';
@@ -239,10 +238,11 @@ const App: React.FC = () => {
 
         if (planet.label === 'Projects') {
             setNextPlanets([
+                createRandomPlanet('Yok', '#FFD166', 'https://github.com/velgardey/yok'),
+                createRandomPlanet('Melior', '#00B4D8', 'https://github.com/velgardey/melior'),
+                createRandomPlanet('Find Your Flick', '#FF6B6B', 'https://github.com/velgardey/find-your-flick'),
                 createRandomPlanet('CHET', '#3A86FF', 'http://13.235.103.165/'),
                 createRandomPlanet('Chess Rogue', '#75d34d', 'https://velgardey.github.io/chess-rogue/'),
-                createRandomPlanet('Hangman', '#8338EC', 'https://velgardey.github.io/hangman/'),
-                createRandomPlanet('Tic-Tac-Toe', '#FF006E', 'https://velgardey.github.io/tic-tac-toe/'),
                 createRandomPlanet('Back', '#FB5607'),
             ]);
             setCurrentPage('projects');
@@ -422,7 +422,6 @@ const renderPageContent = useCallback(() => {
                         bullets={bullets}
                         maxWidth={maxWidth}
                     />
-                    <Projects />
                 </>
             );
         case 'contact':
