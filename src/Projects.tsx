@@ -38,66 +38,6 @@ const PROJECTS: Project[] = [
         tech: 'TypeScript',
         url: 'https://github.com/velgardey/chess-rogue',
     },
-    {
-        name: 'Task Master',
-        tagline: 'A web experience to simplify the process of task noting and alerts.',
-        tech: 'TypeScript',
-        url: 'https://github.com/velgardey/task-master',
-    },
-    {
-        name: 'Store It',
-        tagline: 'C++ backend that breaks a large file into smaller chunks, loads them locally, and recombines the file from the chunks.',
-        tech: 'C++ · JavaScript',
-        url: 'https://github.com/velgardey/store-it',
-    },
-    {
-        name: 'Hangman',
-        tagline: 'A fun and interactive website for playing the classic Hangman game online.',
-        tech: 'TypeScript',
-        url: 'https://github.com/velgardey/hangman',
-    },
-    {
-        name: 'Birthday Scrapbook',
-        tagline: 'Personalized scrapbooks that make your special person\'s day even more memorable.',
-        tech: 'TypeScript',
-        url: 'https://github.com/velgardey/birthday-scrapbook',
-    },
-    {
-        name: 'Tic-Tac-Toe',
-        tagline: 'A simple and engaging website for playing the classic Tic-Tac-Toe game online.',
-        tech: 'JavaScript',
-        url: 'https://github.com/velgardey/tic-tac-toe',
-    },
-    {
-        name: 'Linux Share',
-        tagline: 'A Rust CLI tool for Linux that seamlessly shares files using both Bluetooth and WiFi Direct, similar to Apple\'s AirDrop.',
-        tech: 'Rust',
-        url: 'https://github.com/velgardey/linux-share',
-    },
-    {
-        name: 'Myuzik',
-        tagline: 'A Rust CLI tool to download, manage, and create playlists from YouTube links.',
-        tech: 'Rust',
-        url: 'https://github.com/velgardey/myuzik',
-    },
-    {
-        name: 'Fractal Tree',
-        tagline: 'Interactive fractal-tree visualizer — recursive branching with adjustable depth and angle.',
-        tech: 'JavaScript · Canvas',
-        url: 'https://github.com/velgardey/fractal-tree',
-    },
-    {
-        name: 'Cellular Automata',
-        tagline: 'Rule-driven cellular automata playground (Conway-style grids with configurable rules).',
-        tech: 'JavaScript · Canvas',
-        url: 'https://github.com/velgardey/cellular-automata',
-    },
-    {
-        name: 'Perlin Noise',
-        tagline: 'Perlin-noise terrain/flow-field renderer — smooth value-noise visualization.',
-        tech: 'JavaScript · Canvas',
-        url: 'https://github.com/velgardey/perlin-noise',
-    },
 ];
 
 const LANG_COLORS: Record<string, string> = {
