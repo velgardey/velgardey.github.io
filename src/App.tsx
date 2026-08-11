@@ -4,6 +4,7 @@ import Spacecraft from './components/Spacecraft';
 import AnimatedBullet from './components/AnimatedBullet';
 import Planet from './components/Planet';
 import ExplosionTransition from './components/ExplosionTransition';
+import Projects from './Projects';
 import TypedText from './components/TypedText';
 import useSound from 'use-sound';
 import shootSound from './assets/audio/shoot.wav';
@@ -412,14 +413,17 @@ const renderPageContent = useCallback(() => {
             );
         case 'projects':
             return (
-                <TypedText
-                    text="Explore  my  projects"
-                    style={commonStyle}
-                    collidable={true}
-                    planets={planets}
-                    bullets={bullets}
-                    maxWidth={maxWidth}
-                />
+                <>
+                    <TypedText
+                        text="Explore  my  projects"
+                        style={commonStyle}
+                        collidable={true}
+                        planets={planets}
+                        bullets={bullets}
+                        maxWidth={maxWidth}
+                    />
+                    <Projects />
+                </>
             );
         case 'contact':
             return (
