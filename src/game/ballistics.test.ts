@@ -22,10 +22,7 @@ describe('firstImpact', () => {
   const ship: Vec2 = { x: 0, y: 0 };
 
   it('finds the nearest planet in the path and the contact point', () => {
-    const planets = [
-      planet({ x: 500, y: 0, radius: 50 }),
-      planet({ x: 200, y: 0, radius: 40 }),
-    ];
+    const planets = [planet({ x: 500, y: 0, radius: 50 }), planet({ x: 200, y: 0, radius: 40 })];
     const hit = firstImpact(ship, { x: 1, y: 0 }, planets);
     expect(hit).not.toBeNull();
     expect(hit!.planet.radius).toBe(40);
@@ -41,10 +38,7 @@ describe('firstImpact', () => {
   });
 
   it('ignores planets behind the shot or off the line', () => {
-    const planets = [
-      planet({ x: -200, y: 0 }),
-      planet({ x: 200, y: 300 }),
-    ];
+    const planets = [planet({ x: -200, y: 0 }), planet({ x: 200, y: 300 })];
     expect(firstImpact(ship, { x: 1, y: 0 }, planets)).toBeNull();
   });
 

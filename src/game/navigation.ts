@@ -33,7 +33,12 @@ export function defsForScreen(page: PageId): PlanetDef[] {
       return [...NAV_PLANETS];
     case 'projects':
       return [
-        ...PROJECTS.map((p): PlanetDef => ({ id: p.id, label: p.label, color: p.color, url: p.url })),
+        ...PROJECTS.map((p): PlanetDef => ({
+          id: p.id,
+          label: p.label,
+          color: p.color,
+          url: p.url,
+        })),
         BACK_PLANET,
       ];
     case 'contact':

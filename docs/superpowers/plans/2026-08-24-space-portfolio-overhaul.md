@@ -26,6 +26,7 @@
 ### Task 1: Toolchain reset + shell modernization
 
 **Files:**
+
 - Rewrite: `package.json`, `.eslintrc.cjs` → delete, create `eslint.config.js`, create `.prettierrc.json`
 - Modify: `tsconfig.app.json` (scrub WSL paths), `index.html`
 - Move: `src/assets/space-favicon.svg` → `public/favicon.svg`
@@ -74,17 +75,13 @@ import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 
-export default defineConfig(
-  { ignores: ['dist', 'coverage'] },
-  tseslint.configs.recommended,
-  {
-    plugins: { 'react-hooks': reactHooks },
-    rules: {
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
-    },
+export default defineConfig({ ignores: ['dist', 'coverage'] }, tseslint.configs.recommended, {
+  plugins: { 'react-hooks': reactHooks },
+  rules: {
+    'react-hooks/rules-of-hooks': 'error',
+    'react-hooks/exhaustive-deps': 'warn',
   },
-);
+});
 ```
 
 Delete `.eslintrc.cjs`. Create `.prettierrc.json`:
@@ -111,14 +108,17 @@ Expected: install resolves new lockfile; old app still lints/typechecks/builds.
 ### Task 2: Content data module (TDD)
 
 **Files:**
+
 - Create: `src/data/content.ts`
 - Test: `src/data/content.test.ts`
 
 **Interfaces:**
+
 - Produces: `PROFILE`, `NAV_PLANETS: PlanetDef[]`, `BACK_PLANET: PlanetDef`, `PROJECTS: ProjectInfo[]`, `CONTACT_PLANETS: PlanetDef[]`, `HINT_TEXT: string`, `OG_DESCRIPTION: string`.
 - Types exported: `ProjectInfo { id,label,color,url,oneLiner,description,tech:string[] }`. `PlanetDef { id,label,color,url? }` defined locally here (moved to `src/game/types.ts` in Task 3 which re-exports).
 
 Content (verified against live repos):
+
 - Yok: deploy platform from Git — tech Go/Node/Kafka/AWS ECS/ClickHouse, url `https://github.com/velgardey/yok`, color `#FFD166`
 - Melior: self-improving coding-agent harness on LangGraph — Python/LangGraph/Agents, `https://github.com/velgardey/melior`, `#00B4D8`
 - Find Your Flick: AI social movie companion — Next.js/TS/Firebase/Prisma, `https://github.com/velgardey/find-your-flick`, `#FF6B6B`
@@ -162,10 +162,12 @@ describe('content integrity', () => {
 ### Task 3: Types + physics (TDD)
 
 **Files:**
+
 - Create: `src/game/types.ts`, `src/game/physics.ts`
 - Test: `src/game/physics.test.ts`
 
 **Interfaces:**
+
 - Produces (`types.ts`): `Vec2`, `Kinematic {x,y,vx,vy,radius}`, `PlanetDef`, `Moon`, `Planet extends Kinematic {defId,label,color,url?,moons:Moon[],hasRing,flash,seed}`, `Bullet {id,x,y,vx,vy}`, `Particle {x,y,vx,vy,size,life,maxLife,color}`, `Ring {x,y,radius,maxRadius,life,maxLife,color,width}`, `PageId='main'|'projects'|'contact'`, `Screen={page:PageId}|{page:'detail';projectId:string;from:PageId}`, `Viewport {width,height}`.
 - Produces (`physics.ts`): `integrate(b,dts)`, `wallBounce(b,w,h)`, `bounceOff(b,cx,cy,cr):boolean`, `elasticCollide(a,b)`, `clampSpeed(b,target)`, `SHIP_RADIUS=26`.
 
@@ -177,7 +179,12 @@ import { bounceOff, clampSpeed, elasticCollide, integrate, wallBounce } from './
 import type { Kinematic } from './types';
 
 const body = (o: Partial<Kinematic> = {}): Kinematic => ({
-  x: 0, y: 0, vx: 0, vy: 0, radius: 10, ...o,
+  x: 0,
+  y: 0,
+  vx: 0,
+  vy: 0,
+  radius: 10,
+  ...o,
 });
 
 describe('integrate', () => {
@@ -247,10 +254,12 @@ describe('clampSpeed', () => {
 ### Task 4: Seeded spawn (TDD)
 
 **Files:**
+
 - Create: `src/game/spawn.ts`
 - Test: `src/game/spawn.test.ts`
 
 **Interfaces:**
+
 - Produces: `mulberry32(seed:number):()=>number`, `planetRadius(label:string,mobile:boolean):number`, `spawnPlanets(defs:PlanetDef[], vp:Viewport, mobile:boolean, seed?:number):Planet[]` (default seed = Date.now()).
 
 Rules encoded: inside viewport with `radius` margin; pairwise gap ≥ 28px; outside ship exclusion `radius + SHIP_RADIUS + 48` from center; deterministic given seed; decorative moons (0–2) and ring (rng<0.3); `flash:0`.
@@ -280,8 +289,9 @@ describe('spawnPlanets', () => {
           expect(p.x).toBeLessThanOrEqual(vp.width - p.radius);
           expect(p.y).toBeGreaterThanOrEqual(p.radius);
           expect(p.y).toBeLessThanOrEqual(vp.height - p.radius);
-          expect(Math.hypot(p.x - vp.width / 2, p.y - vp.height / 2))
-            .toBeGreaterThanOrEqual(p.radius + SHIP_RADIUS + 48);
+          expect(Math.hypot(p.x - vp.width / 2, p.y - vp.height / 2)).toBeGreaterThanOrEqual(
+            p.radius + SHIP_RADIUS + 48,
+          );
         }
         for (let i = 0; i < planets.length; i++)
           for (let j = i + 1; j < planets.length; j++) {
@@ -292,8 +302,9 @@ describe('spawnPlanets', () => {
     }
   });
   it('is deterministic per seed', () => {
-    expect(JSON.stringify(spawnPlanets([...NAV_PLANETS], vps[0], false, 7)))
-      .toBe(JSON.stringify(spawnPlanets([...NAV_PLANETS], vps[0], false, 7)));
+    expect(JSON.stringify(spawnPlanets([...NAV_PLANETS], vps[0], false, 7))).toBe(
+      JSON.stringify(spawnPlanets([...NAV_PLANETS], vps[0], false, 7)),
+    );
   });
   it('decorates moons sanely', () => {
     const planets = spawnPlanets([...NAV_PLANETS], vps[0], false, 3);
@@ -306,7 +317,8 @@ describe('spawnPlanets', () => {
 
 describe('mulberry32', () => {
   it('is deterministic', () => {
-    const a = mulberry32(42), b = mulberry32(42);
+    const a = mulberry32(42),
+      b = mulberry32(42);
     expect([a(), a(), a()]).toEqual([b(), b(), b()]);
   });
 });
@@ -326,10 +338,12 @@ describe('planetRadius', () => {
 ### Task 5: Navigation FSM (TDD)
 
 **Files:**
+
 - Create: `src/game/navigation.ts`
 - Test: `src/game/navigation.test.ts`
 
 **Interfaces:**
+
 - Produces: `nextScreen(screen:Screen, planetId:string): Screen|null`, `defsForScreen(page:'main'|'projects'|'contact'): PlanetDef[]`, `titleForScreen(screen:Screen):string`.
 - Behavior: `back` → `{page: screen.page==='detail'?screen.from:'main'}`; main+projects/contact → that page; any non-detail page + project id → `{page:'detail',projectId,from:currentPage}`; resume/social ids → null (URL opened by caller); detail + project id → null. `defsForScreen('projects')` = PROJECTS mapped to PlanetDef + BACK_PLANET; `'contact'` = CONTACT_PLANETS + BACK_PLANET; `'main'` = NAV_PLANETS.
 
@@ -390,10 +404,12 @@ describe('titleForScreen', () => {
 ### Task 6: Effects math (TDD)
 
 **Files:**
+
 - Create: `src/game/effects.ts`
 - Test: `src/game/effects.test.ts`
 
 **Interfaces:**
+
 - Produces: `class Shake { kick(n):void; update(dt):void; offset():Vec2; get level():number }` (trauma clamped 0..1, decays 1.8/s, offset ≤ 14·trauma² per axis); `burst(out:Particle[], x,y,color,count,speed):void`; `updateParticles(ps,dt):void` (life decrements by dt·60, dead culled); `spawnRing(out:Ring[], x,y,color,maxRadius):void`; `updateRings(rs,dt):void` (radius eases toward max, life decays, culled).
 
 - [ ] **Step 1: Failing tests**: shake monotonic decay + bounded offset; burst creates count particles with nonzero velocity and life>0; updateParticles removes expired; rings grow monotonically and cull.
@@ -453,9 +469,11 @@ describe('rings', () => {
 ### Task 7: Renderer
 
 **Files:**
+
 - Create: `src/game/render.ts`
 
 **Interfaces:**
+
 - Consumes: types from `types.ts`.
 - Produces (all `(ctx: CanvasRenderingContext2D, ...)`): `makeStars(vp,count):Star[]` (local `Star` type: x,y,r,alphaBase,layer0-2,twinklePhase); `makeAsteroids(vp,n):Asteroid[]`; `drawBackground(ctx,vp,stars,asteroids,time,aim,reduced)` — bg gradient, nebula blobs (fixed 5 positions, slow sine drift), 3-layer parallax stars (offset `(aim-center)*k(layer)`), asteroid drift+wrap+polygon stroke; `drawPlanet(ctx,p,hovered,focused,time)` — shadowBlur glow, radial gradient fill, white stroke, optional ellipse ring, orbiting moons, word-wrapped label, white flash overlay when `p.flash>0`, dashed rotating focus ring when focused; `drawShip(ctx,pos,angle,muzzle)` — triangle hull #F35B04, gold core line, muzzle flash radial gradient when `muzzle>0`; `drawBullets/drawParticles/drawRings(ctx,arr)` — gradient streaks / fading dots / stroked circles with globalAlpha easing.
 - No unit tests (visual module) — verified by typecheck + Playwright smoke in Task 11. Keep every draw call in this file; engine contains zero ctx code.
@@ -469,9 +487,11 @@ describe('rings', () => {
 ### Task 8: AudioManager
 
 **Files:**
+
 - Create: `src/game/audio.ts`
 
 **Interfaces:**
+
 - Produces: `class AudioManager { init():Promise<void>; shoot():void; explosion():void; duckMusic():void; toggleMute():boolean; get muted():boolean; destroy():void }`.
 - WebAudio: lazily created `AudioContext` inside `init()` (must be called from a user gesture); fetches `shoot.wav`/`explosion.wav` via Vite `?url` imports, decodes to buffers; `shoot()` plays with `playbackRate = 0.9 + Math.random()*0.3`, gain 0.15; `explosion()` gain 0.35. Music: `HTMLAudioElement(loop, volume .12, preload auto)`; `duckMusic()` dips volume to .04 and restores over 700ms; `toggleMute()` persists `localStorage['space-port-muted']`, pauses/resumes music; constructor reads stored mute.
 
@@ -482,9 +502,11 @@ describe('rings', () => {
 ### Task 9: Input controller
 
 **Files:**
+
 - Create: `src/game/input.ts`
 
 **Interfaces:**
+
 - Consumes: none (DOM only).
 - Produces: `interface GameInput { onPointerMove(x,y):void; onShoot(x,y):void; onDragMove(x,y):void; onFocusNext():void; onActivate():void; onCancel():void; onCommand(cmd:'mute'|'help'|'home'|'projects'|'contact'):void }` and `attachInput(surface:HTMLElement, h:GameInput):()=>void`.
 - Pointer Events only. Logic: `pointerdown` records pos/time/id; `pointermove` (no button or hovering) → `onPointerMove`; drag beyond 12px with primary button/touch → `onDragMove` per move (ship follows); `pointerup` within 12px and <400ms → `onShoot(x,y)`. Window `keydown`: Tab→preventDefault+onFocusNext; Enter/Space→onActivate; Escape→onCancel; `m`→mute; `?`/`h`→help; `1/2/3`→home/projects/contact. Returns unregister fn removing all listeners.
@@ -496,9 +518,11 @@ describe('rings', () => {
 ### Task 10: Engine orchestration
 
 **Files:**
+
 - Create: `src/game/engine.ts`
 
 **Interfaces:**
+
 - Consumes: everything above.
 - Produces: `class GameEngine { constructor(canvas, hooks:{onHover(p:Planet|null,x:number,y:number):void; onPlanetHit(p:Planet):void}); start(); destroy(); setPlanets(defs:PlanetDef[], mobile:boolean); resize(vp:Viewport); setReducedMotion(b:boolean); shootAt(x,y); focusNext(); activateFocus(); cancel(); setPaused(b:boolean); audio:AudioManager; aim:Vec2 }`.
 - Loop (rAF): `dt=min((t-last)/1000,.05)`; skip updates while paused (still render); systems: planets integrate/wallBounce/bounceOff(ship)/pairwise elasticCollide/clampSpeed(target .55 or .75 mobile); moons advance `angle+=speed*dt`; `flash-=dt`; bullets integrate (px/s), planet-hit test → remove + `flash=.35` + micro-burst + shake.kick(.12) + hooks.onPlanetHit; offscreen cull; hover = point-in-circle topmost under `aim` (only fine pointers) → hooks.onHover on change; focusedIndex clamped to range; effects update; render via `render.ts` (shake offset translate, dpr-aware transform set in resize: `canvas.width=w*dpr; ctx.setTransform(dpr,0,0,dpr,0,0)`).
@@ -515,10 +539,12 @@ describe('rings', () => {
 ### Task 11: React glue + UI chrome
 
 **Files:**
+
 - Create: `src/hooks/usePrefersReducedMotion.ts`, `src/hooks/useGameEngine.ts`, `src/components/{Crosshair,Tooltip,Hud,IntroText,DossierPanel,HelpOverlay,MusicToggle}.tsx`
 - Modify: `src/vite-env.d.ts` (ensure `/// <reference types="vite/client" />` for `?url` imports)
 
 **Interfaces:**
+
 - `usePrefersReducedMotion():boolean` — matchMedia('(prefers-reduced-motion: reduce)') + change listener.
 - `useGameEngine(canvasRef, hooksRef): GameEngine|null` — constructs once on mount (handlers read through a ref to dodge stale closures), starts, destroys on unmount; exposes engine.
 - `Crosshair` — fixed 36px crosshair following `pointermove` via direct `style.transform` (no re-render); CSS hides native cursor only over canvas (`.game-cursor { cursor: none }` applied on fine pointers via media query in index.css).
@@ -536,11 +562,13 @@ describe('rings', () => {
 ### Task 12: Swap — App composition + deletions + dep pruning + tsconfig tightening
 
 **Files:**
+
 - Rewrite: `src/App.tsx` (~170 lines), `src/main.tsx`, `src/index.css`
 - Delete: `src/App.css`, `src/components/{AnimatedBullet,TypedText,Planet,Spacecraft,ExplosionTransition,LoadingScreen,ParticleSystem,ParticleTrail,BackgroundMusic}.tsx`
 - Modify: `package.json` (drop `use-sound`, `react-responsive`), `tsconfig.app.json` (+ `verbatimModuleSyntax`, `erasableSyntaxOnly`, `noUncheckedSideEffectImports`)
 
 **App behavior (composition root):**
+
 - State: `screen: Screen` (init `{page:'main'}`), `hovered`, `shotOnce` (localStorage `space-port-shot`), `helpOpen`.
 - `handlePlanetHit(p)`: if `p.url` and defId ∉ {nav,project,back} → `window.open(p.url,'_blank','noopener')` + audio.explosion + return. If defId==='back' or nav planet → engine.explode-style sequence: audio.explosion + `setPaused(true)` + wipe via engine (engine gains `wipe(color, cb)` calling cb at completion; App then `setScreen(next)`, `engine.setPlanets(defsForScreen(...))`, `setPaused(false)`). Project planet → light burst + `setScreen({page:'detail',projectId,from})` (planets keep drifting behind dimmed backdrop).
 - Renders: `<canvas>` (ref'd, class `game-cursor`) + `<Crosshair/>` + `<Tooltip/>` + `<IntroText/>` (main only) + `<Hud/>` + conditional `DossierPanel` (project lookup; onClose → `{page:from}`) + `HelpOverlay` + `MusicToggle`.
@@ -556,6 +584,7 @@ describe('rings', () => {
 ### Task 13: CI/CD + README
 
 **Files:**
+
 - Create: `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`
 - Modify: `README.md` (short: what/stack/scripts/deploy notes)
 

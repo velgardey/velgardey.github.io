@@ -276,11 +276,21 @@ body {
 }
 
 /* Content settles in a beat after the panel. */
-.dossier > *:nth-child(1) { animation: fade-up 400ms ease 120ms both; }
-.dossier > *:nth-child(2) { animation: fade-up 400ms ease 200ms both; }
-.dossier > *:nth-child(3) { animation: fade-up 400ms ease 280ms both; }
-.dossier > *:nth-child(4) { animation: fade-up 400ms ease 360ms both; }
-.dossier > *:nth-child(5) { animation: fade-up 400ms ease 440ms both; }
+.dossier > *:nth-child(1) {
+  animation: fade-up 400ms ease 120ms both;
+}
+.dossier > *:nth-child(2) {
+  animation: fade-up 400ms ease 200ms both;
+}
+.dossier > *:nth-child(3) {
+  animation: fade-up 400ms ease 280ms both;
+}
+.dossier > *:nth-child(4) {
+  animation: fade-up 400ms ease 360ms both;
+}
+.dossier > *:nth-child(5) {
+  animation: fade-up 400ms ease 440ms both;
+}
 
 /* Signature aurora hairline along the top edge. */
 .dossier::before,

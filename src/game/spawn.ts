@@ -37,7 +37,7 @@ export function spawnPlanets(
   mobile: boolean,
   seed?: number,
 ): Planet[] {
-  const rng = mulberry32(seed ?? (Date.now() ^ (Math.random() * 0xffffffff)));
+  const rng = mulberry32(seed ?? Date.now() ^ (Math.random() * 0xffffffff));
 
   let scale = 1;
   for (let step = 0; step <= MAX_SHRINK_STEPS; step++, scale *= SHRINK_FACTOR) {
@@ -111,12 +111,7 @@ function fits(x: number, y: number, radius: number, vp: Viewport, others: Planet
   return others.every((o) => Math.hypot(x - o.x, y - o.y) >= radius + o.radius + MIN_GAP);
 }
 
-function bottomLine(
-  defs: PlanetDef[],
-  vp: Viewport,
-  mobile: boolean,
-  rng: () => number,
-): Planet[] {
+function bottomLine(defs: PlanetDef[], vp: Viewport, mobile: boolean, rng: () => number): Planet[] {
   const placed: Planet[] = [];
   const slots = Math.max(defs.length, 2);
 

@@ -39,7 +39,12 @@ export default function Crosshair() {
           <animate attributeName="r" values="14;18;14" dur="1.6s" repeatCount="indefinite" />
         </circle>
         <circle cx="20" cy="20" r="4" fill="#00ffff" opacity="0.8">
-          <animate attributeName="opacity" values="0.8;0.35;0.8" dur="1.6s" repeatCount="indefinite" />
+          <animate
+            attributeName="opacity"
+            values="0.8;0.35;0.8"
+            dur="1.6s"
+            repeatCount="indefinite"
+          />
         </circle>
         <line x1="20" y1="0" x2="20" y2="12" stroke="#00ffff" strokeWidth="1.5" />
         <line x1="20" y1="28" x2="20" y2="40" stroke="#00ffff" strokeWidth="1.5" />

@@ -30,7 +30,17 @@ import {
 import { applyGrazeImpulse, firstImpact } from './ballistics';
 import { seedCaptures, stepDust } from './gravity';
 import { spawnPlanets } from './spawn';
-import type { Beam, Bullet, Dust, Planet, PlanetDef, Particle, Ring, Vec2, Viewport } from './types';
+import type {
+  Beam,
+  Bullet,
+  Dust,
+  Planet,
+  PlanetDef,
+  Particle,
+  Ring,
+  Vec2,
+  Viewport,
+} from './types';
 
 const BULLET_SPEED = 900; // px/s
 const MAX_DT = 0.05;
@@ -109,8 +119,9 @@ export class GameEngine {
     this.resize();
     if (import.meta.env.DEV) {
       // Test hook: lets tooling aim at real planet positions.
-      (window as unknown as { __spacePlanets: () => Array<{ x: number; y: number; r: number }> }).__spacePlanets =
-        () => this.planets.map((p) => ({ x: p.x, y: p.y, r: p.radius }));
+      (
+        window as unknown as { __spacePlanets: () => Array<{ x: number; y: number; r: number }> }
+      ).__spacePlanets = () => this.planets.map((p) => ({ x: p.x, y: p.y, r: p.radius }));
     }
     this.detachInput = attachInput(this.canvas, this.makeInputHandlers());
     this.lastFrame = performance.now();
@@ -224,7 +235,9 @@ export class GameEngine {
     if (this.mobile === mobile) return;
     this.mobile = mobile;
     this.resize();
-    this.setPlanets(this.planets.map((p) => ({ id: p.defId, label: p.label, color: p.color, url: p.url })));
+    this.setPlanets(
+      this.planets.map((p) => ({ id: p.defId, label: p.label, color: p.color, url: p.url })),
+    );
   }
 
   // ---- internals ----------------------------------------------------------
@@ -233,7 +246,8 @@ export class GameEngine {
     return {
       onPointerMove: (x, y) => {
         this.aim = { x, y };
-        if (!this.mobile) this.shipAngle = Math.atan2(y - this.vp.height / 2, x - this.vp.width / 2);
+        if (!this.mobile)
+          this.shipAngle = Math.atan2(y - this.vp.height / 2, x - this.vp.width / 2);
       },
       onShoot: (x, y) => {
         void this.audio.init(); // first gesture also unlocks audio
@@ -430,7 +444,14 @@ export class GameEngine {
     const center = { x: this.vp.width / 2 + bobX, y: this.vp.height / 2 + bobY };
     for (const p of this.planets) {
       if (p.spawnT <= 0) continue; // still queued for warp-in
-      drawPlanet(ctx, p, p === this.hovered, this.planets.indexOf(p) === this.focusedIndex, t, center);
+      drawPlanet(
+        ctx,
+        p,
+        p === this.hovered,
+        this.planets.indexOf(p) === this.focusedIndex,
+        t,
+        center,
+      );
     }
     drawRings(ctx, this.rings);
     drawBeams(ctx, this.beams);

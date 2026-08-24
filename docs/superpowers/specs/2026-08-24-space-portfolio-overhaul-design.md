@@ -146,6 +146,7 @@ OG image deferred (needs a generated asset).
 ## Testing
 
 Vitest (node env) for pure modules:
+
 - `physics`: wall bounce clamps velocity, elastic collision conserves momentum,
   speed normalization.
 - `spawn`: placements inside viewport, outside ship exclusion radius, pairwise

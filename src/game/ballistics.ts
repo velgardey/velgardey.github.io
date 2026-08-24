@@ -21,11 +21,7 @@ export interface Impact {
 }
 
 /** First planet a ray from `from` toward `dir` (unit) would touch, if any. */
-export function firstImpact(
-  from: Vec2,
-  dir: Vec2,
-  planets: Planet[],
-): Impact | null {
+export function firstImpact(from: Vec2, dir: Vec2, planets: Planet[]): Impact | null {
   let best: Impact | null = null;
 
   for (const planet of planets) {

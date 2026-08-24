@@ -8,13 +8,38 @@ render loop; React renders only the UI chrome (HUD, tooltips, project dossiers).
 
 ## Scripts
 
-| Command         | What it does                     |
-| --------------- | -------------------------------- |
-| `pnpm dev`      | Dev server                       |
-| `pnpm build`    | Typecheck + production build     |
-| `pnpm lint`     | ESLint                           |
-| `pnpm test`     | Vitest unit tests (pure modules) |
-| `pnpm format`   | Prettier                         |
+| Command          | What it does                       |
+| ---------------- | ---------------------------------- |
+| `pnpm dev`       | Dev server                         |
+| `pnpm build`     | Typecheck + production build       |
+| `pnpm preview`   | Serve the production build locally |
+| `pnpm lint`      | ESLint                             |
+| `pnpm test`      | Vitest unit tests (pure modules)   |
+| `pnpm typecheck` | `tsc -b` only                      |
+| `pnpm format`    | Prettier (whole repo)              |
+
+## Architecture
+
+Strict one-way layering — each layer only imports the ones above it:
+
+```
+data/content.ts        all copy: projects, links, descriptions
+   ↑
+game/ (pure logic)     physics · ballistics · gravity · spawn · navigation ·
+                       effects — plain functions, unit-tested, no DOM
+   ↑
+game/engine.ts         the only stateful module: owns the canvas, one rAF
+                       loop, all entities; emits hover/hit events
+   ↑
+hooks/                 React ↔ engine glue (useGameEngine, reduced-motion)
+   ↑
+components/ + App.tsx  UI chrome only — HUD, tooltip, dossier, help; zero
+                       game logic, zero per-frame state
+```
+
+Rules of thumb: `game/` never imports React; components never mutate game
+state (they call engine commands); all copy lives in `data/content.ts`;
+every canvas draw call lives in `render.ts` — the engine holds none.
 
 ## Controls
 

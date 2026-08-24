@@ -50,7 +50,12 @@ describe('spawnPlanets', () => {
   });
 
   it('carries def content onto the planet', () => {
-    const [planet] = spawnPlanets([{ id: 'x', label: 'Hello World', color: '#FFFFFF' }], viewports[0], false, 1);
+    const [planet] = spawnPlanets(
+      [{ id: 'x', label: 'Hello World', color: '#FFFFFF' }],
+      viewports[0],
+      false,
+      1,
+    );
     expect(planet.defId).toBe('x');
     expect(planet.label).toBe('Hello World');
     expect(planet.color).toBe('#FFFFFF');

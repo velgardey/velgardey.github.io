@@ -72,7 +72,15 @@ describe('capture', () => {
   it('stops capturing once a planet holds its cap', () => {
     const planets = [makePlanet()];
     const captured = Array.from({ length: MAX_CAPTURED_PER_PLANET }, () =>
-      makeDust({ x: 10, y: 0, capturedBy: 0, orbitRadius: 60, orbitAngle: 1, orbitSpeed: 1, releaseIn: 10 }),
+      makeDust({
+        x: 10,
+        y: 0,
+        capturedBy: 0,
+        orbitRadius: 60,
+        orbitAngle: 1,
+        orbitSpeed: 1,
+        releaseIn: 10,
+      }),
     );
     captured.forEach((c) => stepDust(c, planets, captured, 0.016));
 
@@ -85,7 +93,15 @@ describe('capture', () => {
 describe('orbit', () => {
   it('moves captured dust along its orbit and keeps it near the planet', () => {
     const p = makePlanet({ x: 100, y: 100 });
-    const d = makeDust({ x: 130, y: 100, capturedBy: 0, orbitRadius: 30, orbitAngle: 0, orbitSpeed: Math.PI, releaseIn: 5 });
+    const d = makeDust({
+      x: 130,
+      y: 100,
+      capturedBy: 0,
+      orbitRadius: 30,
+      orbitAngle: 0,
+      orbitSpeed: Math.PI,
+      releaseIn: 5,
+    });
     stepDust(d, [p], [d], 0.5);
     expect(d.capturedBy).toBe(0);
     expect(Math.hypot(d.x - p.x, d.y - p.y)).toBeCloseTo(30);
@@ -94,7 +110,14 @@ describe('orbit', () => {
   });
 
   it('releases captured dust whose planet disappeared', () => {
-    const d = makeDust({ capturedBy: 3, orbitRadius: 30, orbitAngle: 0, orbitSpeed: 1, x: 5, y: 5 });
+    const d = makeDust({
+      capturedBy: 3,
+      orbitRadius: 30,
+      orbitAngle: 0,
+      orbitSpeed: 1,
+      x: 5,
+      y: 5,
+    });
     stepDust(d, [], [d], 0.016);
     expect(d.capturedBy).toBe(-1);
     expect(d.cooldown).toBeGreaterThan(0);
@@ -104,7 +127,15 @@ describe('orbit', () => {
 describe('release', () => {
   it('ejects tangentially with an outward push and starts a cooldown', () => {
     const p = makePlanet({ x: 0, y: 0 });
-    const d = makeDust({ capturedBy: 0, orbitRadius: 60, orbitAngle: 0, orbitSpeed: 1, releaseIn: 0.01, x: 60, y: 0 });
+    const d = makeDust({
+      capturedBy: 0,
+      orbitRadius: 60,
+      orbitAngle: 0,
+      orbitSpeed: 1,
+      releaseIn: 0.01,
+      x: 60,
+      y: 0,
+    });
     stepDust(d, [p], [d], 0.5);
     expect(d.capturedBy).toBe(-1);
     expect(d.cooldown).toBeGreaterThan(0);

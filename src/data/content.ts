@@ -82,7 +82,12 @@ export const PROJECTS: ProjectInfo[] = [
 ];
 
 export const CONTACT_PLANETS: PlanetDef[] = [
-  { id: 'linkedin', label: 'LinkedIn', color: '#0077B5', url: 'https://www.linkedin.com/in/mrigankadey/' },
+  {
+    id: 'linkedin',
+    label: 'LinkedIn',
+    color: '#0077B5',
+    url: 'https://www.linkedin.com/in/mrigankadey/',
+  },
   { id: 'github', label: 'GitHub', color: '#6E5494', url: 'https://github.com/velgardey' },
   { id: 'twitter', label: 'Twitter', color: '#1DA1F2', url: 'https://x.com/velgardey' },
   {
@@ -91,7 +96,12 @@ export const CONTACT_PLANETS: PlanetDef[] = [
     color: '#7289DA',
     url: 'https://discordapp.com/users/468278174849957899',
   },
-  { id: 'instagram', label: 'Instagram', color: '#E1306C', url: 'https://www.instagram.com/velgardey/' },
+  {
+    id: 'instagram',
+    label: 'Instagram',
+    color: '#E1306C',
+    url: 'https://www.instagram.com/velgardey/',
+  },
 ];
 
 export const HINT_TEXT = 'Click or tap to shoot · Tab targets · Enter fires · ? for help';

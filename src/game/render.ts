@@ -46,7 +46,12 @@ export function makeStars(vp: Viewport, count: number): Star[] {
     stars.push({
       x: Math.random() * vp.width,
       y: Math.random() * vp.height,
-      r: layer === 2 ? 1.4 + Math.random() * 0.9 : layer === 1 ? 0.9 + Math.random() * 0.7 : 0.5 + Math.random() * 0.5,
+      r:
+        layer === 2
+          ? 1.4 + Math.random() * 0.9
+          : layer === 1
+            ? 0.9 + Math.random() * 0.7
+            : 0.5 + Math.random() * 0.5,
       alpha: 0.25 + Math.random() * 0.6,
       layer,
       phase: Math.random() * Math.PI * 2,
@@ -210,7 +215,12 @@ export function drawBeams(ctx: CanvasRenderingContext2D, beams: Beam[]): void {
  * Tactical aim guide: dotted ray to the first planet in the path. Solid dot =
  * core (kill) shot, hollow ring = graze (shove) shot.
  */
-export function drawAimGuide(ctx: CanvasRenderingContext2D, from: Vec2, to: Vec2, planets: Planet[]): void {
+export function drawAimGuide(
+  ctx: CanvasRenderingContext2D,
+  from: Vec2,
+  to: Vec2,
+  planets: Planet[],
+): void {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const len = Math.hypot(dx, dy);
@@ -251,7 +261,12 @@ export function drawAimGuide(ctx: CanvasRenderingContext2D, from: Vec2, to: Vec2
 }
 
 /** Ambient dust: dim, slow-twinkling; captured grains tint toward their planet. */
-export function drawDust(ctx: CanvasRenderingContext2D, dust: Dust[], planets: Planet[], time: number): void {
+export function drawDust(
+  ctx: CanvasRenderingContext2D,
+  dust: Dust[],
+  planets: Planet[],
+  time: number,
+): void {
   for (const d of dust) {
     // Slow twinkle across the whole field.
     const twinkle = 0.55 + 0.45 * Math.sin(time * 0.0006 + d.phase);
@@ -532,7 +547,10 @@ export function drawWipe(
   progress: number,
   color: string,
 ): void {
-  const maxR = Math.hypot(Math.max(center.x, vp.width - center.x), Math.max(center.y, vp.height - center.y));
+  const maxR = Math.hypot(
+    Math.max(center.x, vp.width - center.x),
+    Math.max(center.y, vp.height - center.y),
+  );
   ctx.fillStyle = color;
   ctx.globalAlpha = progress < 0.85 ? 1 : (1 - progress) / 0.15;
   ctx.beginPath();

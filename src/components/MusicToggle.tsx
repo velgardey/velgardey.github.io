@@ -23,7 +23,14 @@ export default function MusicToggle({ audio }: { audio: AudioManager | null }) {
       aria-pressed={!muted}
       aria-label={muted ? 'Unmute sound' : 'Mute sound'}
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none" />
         {muted ? (
           <>
