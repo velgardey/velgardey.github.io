@@ -70,18 +70,20 @@ export function updateParticles(particles: Particle[], dt: number): void {
   }
 }
 
-/** Add an expanding shockwave ring. */
+/** Add an expanding shockwave ring that starts wide (at `startRadius`). */
 export function spawnRing(
   out: Ring[],
   x: number,
   y: number,
   color: string,
   maxRadius: number,
+  startRadius = maxRadius * 0.1,
 ): void {
   out.push({
     x,
     y,
-    radius: maxRadius * 0.08,
+    radius: startRadius,
+    startRadius,
     maxRadius,
     life: 0.5,
     maxLife: 0.5,
@@ -90,13 +92,13 @@ export function spawnRing(
   });
 }
 
-/** Expand rings toward their target radius and expire finished ones. */
+/** Expand rings from their start radius and expire finished ones. */
 export function updateRings(rings: Ring[], dt: number): void {
   for (let i = rings.length - 1; i >= 0; i--) {
     const r = rings[i];
     r.life -= dt;
     const progress = 1 - r.life / r.maxLife;
-    r.radius = r.maxRadius * easeOut(progress);
+    r.radius = r.startRadius + (r.maxRadius - r.startRadius) * easeOut(progress);
     if (r.life <= 0) rings.splice(i, 1);
   }
 }

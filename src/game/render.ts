@@ -7,7 +7,10 @@ export interface Star {
   alpha: number;
   layer: 0 | 1 | 2;
   phase: number;
+  color: string;
 }
+
+const STAR_TINTS = ['#DFE9FF', '#DFE9FF', '#DFE9FF', '#9BE8DC', '#B4BCFF'];
 
 export interface Asteroid {
   x: number;
@@ -46,6 +49,7 @@ export function makeStars(vp: Viewport, count: number): Star[] {
       alpha: 0.25 + Math.random() * 0.6,
       layer,
       phase: Math.random() * Math.PI * 2,
+      color: STAR_TINTS[Math.floor(Math.random() * STAR_TINTS.length)],
     });
   }
   return stars;
@@ -73,11 +77,11 @@ export function makeAsteroids(vp: Viewport, count: number): Asteroid[] {
 }
 
 const NEBULAE = [
-  { x: 0.22, y: 0.28, r: 0.42, rgb: '90,60,180', a: 0.05 },
-  { x: 0.75, y: 0.18, r: 0.36, rgb: '30,120,200', a: 0.06 },
-  { x: 0.62, y: 0.72, r: 0.48, rgb: '160,40,120', a: 0.04 },
-  { x: 0.15, y: 0.78, r: 0.34, rgb: '20,140,140', a: 0.045 },
-  { x: 0.45, y: 0.45, r: 0.55, rgb: '70,70,160', a: 0.03 },
+  { x: 0.22, y: 0.28, r: 0.42, rgb: '94,234,212', a: 0.035 },
+  { x: 0.75, y: 0.18, r: 0.36, rgb: '139,147,248', a: 0.05 },
+  { x: 0.62, y: 0.72, r: 0.48, rgb: '240,171,252', a: 0.028 },
+  { x: 0.15, y: 0.78, r: 0.34, rgb: '56,120,255', a: 0.04 },
+  { x: 0.45, y: 0.45, r: 0.55, rgb: '99,102,241', a: 0.03 },
 ];
 
 export function drawBackground(
@@ -90,9 +94,9 @@ export function drawBackground(
   reducedMotion: boolean,
 ): void {
   const bg = ctx.createLinearGradient(0, 0, 0, vp.height);
-  bg.addColorStop(0, '#05050a');
-  bg.addColorStop(0.6, '#0b1020');
-  bg.addColorStop(1, '#131a2e');
+  bg.addColorStop(0, '#04060f');
+  bg.addColorStop(0.55, '#0a0f22');
+  bg.addColorStop(1, '#131a33');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, vp.width, vp.height);
 
@@ -123,7 +127,7 @@ export function drawBackground(
 
     const twinkle = reducedMotion ? 1 : 0.7 + 0.3 * Math.sin(time * 0.001 + s.phase);
     ctx.globalAlpha = s.alpha * twinkle;
-    ctx.fillStyle = '#dfe9ff';
+    ctx.fillStyle = s.color;
     ctx.beginPath();
     ctx.arc(x, y, s.r, 0, Math.PI * 2);
     ctx.fill();
@@ -194,27 +198,7 @@ export function drawPlanet(
   ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
   ctx.stroke();
 
-  if (p.hasRing) {
-    ctx.strokeStyle = `rgba(${rgb},0.7)`;
-    ctx.lineWidth = 3;
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(-0.45);
-    ctx.scale(1, 0.32);
-    ctx.beginPath();
-    ctx.arc(0, 0, p.radius * 1.45, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  for (const m of p.moons) {
-    const mx = p.x + Math.cos(m.angle + time * 0.001 * m.speed) * m.distance;
-    const my = p.y + Math.sin(m.angle + time * 0.001 * m.speed) * m.distance;
-    ctx.fillStyle = 'rgba(220,228,255,0.85)';
-    ctx.beginPath();
-    ctx.arc(mx, my, m.radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  drawRingParticles(ctx, p, time);
 
   drawLabel(ctx, p);
 
@@ -239,6 +223,21 @@ export function drawPlanet(
   }
 }
 
+/** Orbiting particles hugging the surface — the ring IS the moving particles. */
+function drawRingParticles(ctx: CanvasRenderingContext2D, p: Planet, time: number): void {
+  for (const rp of p.ringParticles) {
+    const a = rp.angle + time * 0.001 * rp.speed;
+    const r = p.radius + rp.lift;
+    const twinkle = 0.7 + 0.3 * Math.sin(time * 0.004 + rp.phase);
+    ctx.globalAlpha = rp.alpha * twinkle;
+    ctx.fillStyle = '#CFF9F2';
+    ctx.beginPath();
+    ctx.arc(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r, rp.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
 function drawLabel(ctx: CanvasRenderingContext2D, p: Planet): void {
   const words = p.label.split(' ');
   const fontSize = Math.max(11, Math.min(17, p.radius / 4));
@@ -261,45 +260,89 @@ export function drawShip(
   pos: Vec2,
   angle: number,
   muzzle: number,
+  time: number,
 ): void {
   ctx.save();
   ctx.translate(pos.x, pos.y);
   ctx.rotate(angle);
 
+  // Muzzle flash at the nose.
   if (muzzle > 0) {
     ctx.globalAlpha = muzzle / 0.09;
-    const flashLen = 46;
-    const g = ctx.createRadialGradient(24, 0, 2, 24, 0, flashLen);
-    g.addColorStop(0, 'rgba(255,240,180,0.95)');
-    g.addColorStop(1, 'rgba(255,180,60,0)');
+    const g = ctx.createRadialGradient(30, 0, 2, 30, 0, 42);
+    g.addColorStop(0, 'rgba(214,250,255,0.95)');
+    g.addColorStop(1, 'rgba(94,234,212,0)');
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(24, 0, flashLen, 0, Math.PI * 2);
+    ctx.arc(30, 0, 42, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
   }
 
-  ctx.shadowColor = 'rgba(243,91,4,0.9)';
-  ctx.shadowBlur = 18;
-  ctx.fillStyle = '#f35b04';
+  // Engine exhaust: flickering aurora plume behind the hull.
+  const flicker = 0.72 + 0.18 * Math.sin(time * 0.02) + 0.1 * Math.sin(time * 0.047);
+  ctx.globalCompositeOperation = 'lighter';
+  const exhaust = ctx.createRadialGradient(-18, 0, 1, -18, 0, 26 * flicker);
+  exhaust.addColorStop(0, 'rgba(125,249,255,0.85)');
+  exhaust.addColorStop(0.45, 'rgba(94,234,212,0.35)');
+  exhaust.addColorStop(1, 'rgba(139,147,248,0)');
+  ctx.fillStyle = exhaust;
   ctx.beginPath();
-  ctx.moveTo(-22, -16);
-  ctx.lineTo(24, 0);
-  ctx.lineTo(-22, 16);
+  ctx.arc(-18, 0, 26 * flicker, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+
+  // Hull: layered dart with a notched tail.
+  ctx.shadowColor = 'rgba(94,234,212,0.55)';
+  ctx.shadowBlur = 14;
+  const hull = ctx.createLinearGradient(0, -12, 0, 12);
+  hull.addColorStop(0, '#243258');
+  hull.addColorStop(0.5, '#141E3C');
+  hull.addColorStop(1, '#0C1329');
+  ctx.fillStyle = hull;
+  ctx.beginPath();
+  ctx.moveTo(28, 0); // nose
+  ctx.lineTo(-10, 11); // starboard wing
+  ctx.lineTo(-6, 0); // tail notch
+  ctx.lineTo(-10, -11); // port wing
   ctx.closePath();
   ctx.fill();
-
   ctx.shadowBlur = 0;
-  ctx.fillStyle = '#ffd700';
+
+  // Aurora edge: teal -> violet along the hull.
+  const edge = ctx.createLinearGradient(-10, -11, 28, 0);
+  edge.addColorStop(0, '#8B93F8');
+  edge.addColorStop(1, '#5EEAD4');
+  ctx.strokeStyle = edge;
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+
+  // Spine highlight.
+  ctx.strokeStyle = 'rgba(233,238,251,0.35)';
+  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.arc(-4, 0, 5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#ffd700';
+  ctx.moveTo(22, 0);
+  ctx.lineTo(-5, 0);
+  ctx.stroke();
+
+  // Wing-tip accents.
+  ctx.strokeStyle = 'rgba(94,234,212,0.9)';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(-4, -10);
-  ctx.lineTo(-4, 10);
+  ctx.moveTo(-4, 8);
+  ctx.lineTo(-9, 10);
+  ctx.moveTo(-4, -8);
+  ctx.lineTo(-9, -10);
   ctx.stroke();
+
+  // Cockpit glow.
+  ctx.shadowColor = 'rgba(125,249,255,0.9)';
+  ctx.shadowBlur = 9;
+  ctx.fillStyle = '#7DF9FF';
+  ctx.beginPath();
+  ctx.ellipse(9, 0, 4.5, 2.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
 
   ctx.restore();
 }

@@ -44,6 +44,8 @@ interface WipeState {
   center: Vec2;
   color: string;
   progress: number;
+  /** Seconds to hold before the wipe paints — lets the ripple land first. */
+  delay: number;
   done: () => void;
 }
 
@@ -168,10 +170,11 @@ export class GameEngine {
 
   /** Full-screen colour wipe toward `done`; used for page transitions. */
   beginWipe(center: Vec2, color: string, done: () => void): void {
-    this.wipe = { center: { ...center }, color, progress: 0, done };
+    this.wipe = { center: { ...center }, color, progress: 0, delay: 0.12, done };
     this.audio.explosion();
-    burst(this.particles, center.x, center.y, color, 60, 6);
-    spawnRing(this.rings, center.x, center.y, color, Math.max(this.vp.width, this.vp.height) * 0.4);
+    burst(this.particles, center.x, center.y, color, 70, 7);
+    const far = Math.max(this.vp.width, this.vp.height) * 0.4;
+    spawnRing(this.rings, center.x, center.y, color, far, Math.min(far * 0.3, 140));
     this.shake.kick(0.5);
   }
 
@@ -229,7 +232,11 @@ export class GameEngine {
 
     if (this.wipe) {
       updateParticles(this.particles, dt);
-      this.wipe.progress += dt * 2.2;
+      if (this.wipe.delay > 0) {
+        this.wipe.delay -= dt;
+      } else {
+        this.wipe.progress += dt * 2.4;
+      }
       if (this.wipe.progress >= 1) {
         const done = this.wipe.done;
         this.wipe = null;
@@ -253,7 +260,6 @@ export class GameEngine {
       bounceOff(p, cx, cy, SHIP_RADIUS);
       clampSpeed(p, targetSpeed);
       p.flash = Math.max(0, p.flash - dt);
-      for (const m of p.moons) m.angle += m.speed * dt;
     }
     for (let i = 0; i < this.planets.length; i++) {
       for (let j = i + 1; j < this.planets.length; j++) {
@@ -295,7 +301,9 @@ export class GameEngine {
   private registerHit(planet: Planet, x: number, y: number): void {
     planet.flash = 0.35;
     burst(this.particles, x, y, planet.color, 14, 4);
-    spawnRing(this.rings, x, y, planet.color, planet.radius * 1.8);
+    // Ripple reads instantly: rings start at the impact site, already wide.
+    spawnRing(this.rings, x, y, planet.color, planet.radius * 2.4, planet.radius * 0.8);
+    spawnRing(this.rings, x, y, '#FFFFFF', planet.radius * 1.5, planet.radius * 0.45);
     this.shake.kick(0.15);
     this.hooks.onPlanetHit(planet);
   }
@@ -335,7 +343,13 @@ export class GameEngine {
     drawRings(ctx, this.rings);
     drawBullets(ctx, this.bullets);
     drawParticles(ctx, this.particles);
-    drawShip(ctx, { x: this.vp.width / 2, y: this.vp.height / 2 }, this.shipAngle, this.muzzle);
+    drawShip(
+      ctx,
+      { x: this.vp.width / 2, y: this.vp.height / 2 },
+      this.shipAngle,
+      this.muzzle,
+      t,
+    );
 
     ctx.restore();
 

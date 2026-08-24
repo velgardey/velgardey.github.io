@@ -20,11 +20,15 @@ export interface PlanetDef {
   url?: string;
 }
 
-export interface Moon {
-  distance: number;
-  radius: number;
+export interface RingParticle {
   angle: number;
+  /** rad/s along the perimeter */
   speed: number;
+  size: number;
+  alpha: number;
+  /** height above the planet surface */
+  lift: number;
+  phase: number;
 }
 
 export interface Planet extends Kinematic {
@@ -32,8 +36,7 @@ export interface Planet extends Kinematic {
   label: string;
   color: string;
   url?: string;
-  moons: Moon[];
-  hasRing: boolean;
+  ringParticles: RingParticle[];
   /** Seconds remaining of the white hit-flash overlay. */
   flash: number;
   seed: number;
@@ -63,6 +66,7 @@ export interface Ring {
   x: number;
   y: number;
   radius: number;
+  startRadius: number;
   maxRadius: number;
   life: number;
   maxLife: number;

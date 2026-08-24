@@ -52,12 +52,13 @@ describe('spawnPlanets', () => {
     expect(planet.flash).toBe(0);
   });
 
-  it('decorates moons sanely', () => {
+  it('decorates rings with sane orbiting particles', () => {
     const planets = spawnPlanets([...NAV_PLANETS], viewports[0], false, 3);
     for (const p of planets) {
-      expect(p.moons.length).toBeLessThanOrEqual(2);
-      for (const m of p.moons) {
-        expect(m.distance).toBeGreaterThan(p.radius);
+      expect(p.ringParticles.length).toBeLessThanOrEqual(16);
+      for (const rp of p.ringParticles) {
+        expect(rp.lift).toBeGreaterThan(0);
+        expect(rp.speed).toBeGreaterThan(0);
       }
     }
   });

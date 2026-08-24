@@ -60,7 +60,8 @@ describe('particles', () => {
 describe('rings', () => {
   it('expand monotonically then expire', () => {
     const rs: Ring[] = [];
-    spawnRing(rs, 0, 0, '#fff', 100);
+    spawnRing(rs, 0, 0, '#fff', 100, 40);
+    expect(rs[0]!.radius).toBe(40); // starts at the given radius, not a point
     let lastRadius = rs[0]!.radius;
     let frames = 0;
     while (rs.length > 0 && frames < 600) {

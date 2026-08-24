@@ -1,5 +1,5 @@
 import { SHIP_RADIUS } from './physics';
-import type { Moon, Planet, PlanetDef, Viewport } from './types';
+import type { Planet, PlanetDef, RingParticle, Viewport } from './types';
 
 /** Small, fast, seedable PRNG — deterministic layouts for tests and stable decoration. */
 export function mulberry32(seed: number): () => number {
@@ -25,18 +25,22 @@ export function planetRadius(label: string, mobile: boolean): number {
   return Math.max(base, base + label.length * perChar);
 }
 
-function decorate(radius: number, rng: () => number): Pick<Planet, 'moons' | 'hasRing'> {
-  const moons: Moon[] = [];
-  const moonCount = Math.floor(rng() * 3); // 0..2
-  for (let i = 0; i < moonCount; i++) {
-    moons.push({
-      distance: radius + 12 + rng() * 14,
-      radius: 3 + rng() * 4,
-      angle: rng() * Math.PI * 2,
-      speed: 0.5 + rng(),
-    });
+function decorate(rng: () => number): Pick<Planet, 'ringParticles'> {
+  const ringParticles: RingParticle[] = [];
+  if (rng() < 0.55) {
+    const count = 10 + Math.floor(rng() * 7); // 10..16
+    for (let i = 0; i < count; i++) {
+      ringParticles.push({
+        angle: (i / count) * Math.PI * 2 + rng() * 0.6,
+        speed: 0.35 + rng() * 0.55, // same direction, varied pace
+        size: 1.2 + rng() * 1.6,
+        alpha: 0.35 + rng() * 0.5,
+        lift: 7 + rng() * 13,
+        phase: rng() * Math.PI * 2,
+      });
+    }
   }
-  return { moons, hasRing: rng() < 0.3 };
+  return { ringParticles };
 }
 
 /**
@@ -78,8 +82,8 @@ function tryLayout(
     const spot = findSpot(radius, vp, placed, rng);
     if (!spot) return null;
 
-    const { moons, hasRing } = decorate(radius, rng);
-    placed.push(toPlanet(def, spot.x, spot.y, radius, mobile, moons, hasRing, rng()));
+    const { ringParticles } = decorate(rng);
+    placed.push(toPlanet(def, spot.x, spot.y, radius, mobile, ringParticles, rng()));
   }
   return placed;
 }
@@ -137,11 +141,11 @@ function bottomLine(
 
   defs.forEach((def, index) => {
     const radius = planetRadius(def.label, mobile);
-    const { moons, hasRing } = decorate(radius, rng);
+    const { ringParticles } = decorate(rng);
     const step = (vp.width - radius * 2) / slots;
     const x = radius + step * index;
     const y = vp.height - radius - 8;
-    placed.push(toPlanet(def, x, y, radius, mobile, moons, hasRing, rng()));
+    placed.push(toPlanet(def, x, y, radius, mobile, ringParticles, rng()));
   });
   return placed;
 }
@@ -152,8 +156,7 @@ function toPlanet(
   y: number,
   radius: number,
   mobile: boolean,
-  moons: Moon[],
-  hasRing: boolean,
+  ringParticles: RingParticle[],
   seed: number,
 ): Planet {
   const angle = seed * Math.PI * 2;
@@ -168,8 +171,7 @@ function toPlanet(
     radius,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
-    moons,
-    hasRing,
+    ringParticles,
     flash: 0,
     seed,
   };
