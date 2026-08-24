@@ -15,9 +15,7 @@
   },
   "dependencies": {
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "use-sound": "^4.0.3",
-    "react-responsive": "^10.0.0"
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",

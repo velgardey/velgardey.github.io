@@ -34,6 +34,10 @@ const MOBILE_TARGET_SPEED = 0.75;
 export interface EngineHooks {
   onHover(planet: Planet | null, x: number, y: number): void;
   onPlanetHit(planet: Planet): void;
+  /** Non-audio commands ('help', navigation digits) belong to the app layer. */
+  onUiCommand?(cmd: Command): void;
+  /** Escape pressed outside of any modal. */
+  onCancel?(): void;
 }
 
 interface WipeState {
@@ -77,10 +81,12 @@ export class GameEngine {
   private mobile = false;
   private detachInput: (() => void) | null = null;
 
-  constructor(
-    private canvas: HTMLCanvasElement,
-    private hooks: EngineHooks,
-  ) {
+  private canvas: HTMLCanvasElement;
+  private hooks: EngineHooks;
+
+  constructor(canvas: HTMLCanvasElement, hooks: EngineHooks) {
+    this.canvas = canvas;
+    this.hooks = hooks;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D unavailable');
     this.ctx = ctx;
@@ -169,13 +175,11 @@ export class GameEngine {
   }
 
   handleCommand(cmd: Command): void {
-    switch (cmd) {
-      case 'mute':
-        this.audio.toggleMute();
-        break;
-      default:
-        break; // help/nav commands are App-level; engine ignores them
+    if (cmd === 'mute') {
+      this.audio.toggleMute();
+      return;
     }
+    this.hooks.onUiCommand?.(cmd);
   }
 
   get isMobile(): boolean {
@@ -212,6 +216,7 @@ export class GameEngine {
       },
       onCancel: () => {
         this.focusedIndex = -1;
+        this.hooks.onCancel?.();
       },
       onCommand: (cmd) => this.handleCommand(cmd),
     };
