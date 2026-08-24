@@ -27,7 +27,7 @@ import {
   type Asteroid,
   type Star,
 } from './render';
-import { applyGrazeImpulse, CORE_HIT_RATIO } from './ballistics';
+import { applyGrazeImpulse, firstImpact } from './ballistics';
 import { seedCaptures, stepDust } from './gravity';
 import { spawnPlanets } from './spawn';
 import type { Beam, Bullet, Dust, Planet, PlanetDef, Particle, Ring, Vec2, Viewport } from './types';
@@ -109,6 +109,11 @@ export class GameEngine {
 
   start(): void {
     this.resize();
+    if (import.meta.env.DEV) {
+      // Test hook: lets tooling aim at real planet positions.
+      (window as unknown as { __spacePlanets: () => Array<{ x: number; y: number; r: number }> }).__spacePlanets =
+        () => this.planets.map((p) => ({ x: p.x, y: p.y, r: p.radius }));
+    }
     this.detachInput = attachInput(this.canvas, this.makeInputHandlers());
     this.lastFrame = performance.now();
     const loop = (t: number) => {
@@ -327,27 +332,33 @@ export class GameEngine {
   private updateBullets(dt: number): void {
     outer: for (let i = this.bullets.length - 1; i >= 0; i--) {
       const b = this.bullets[i];
+      const fromX = b.x;
+      const fromY = b.y;
       b.x += b.vx * dt;
       b.y += b.vy * dt;
 
-      for (const planet of this.planets) {
-        const dist = Math.hypot(b.x - planet.x, b.y - planet.y);
-        if (dist >= planet.radius) continue;
-
-        const speed = Math.hypot(b.vx, b.vy) || 1;
-        const dir = { x: b.vx / speed, y: b.vy / speed };
-
-        if (dist < planet.radius * CORE_HIT_RATIO) {
-          this.registerHit(planet, b.x, b.y);
-        } else {
-          // Graze: shove the blocker along the shot and keep playing.
-          applyGrazeImpulse(planet, dir);
-          burst(this.particles, b.x, b.y, '#FFFFFF', 6, 3);
-          this.shake.kick(0.06);
-          this.audio.graze();
+      // Continuous collision: sweep the travelled segment. A path through the
+      // core kills; a path that only clips the band grazes — regardless of
+      // which frame first touches the rim.
+      const segLen = Math.hypot(b.x - fromX, b.y - fromY);
+      if (segLen > 0) {
+        const dir = { x: (b.x - fromX) / segLen, y: (b.y - fromY) / segLen };
+        const impact = firstImpact({ x: fromX, y: fromY }, dir, this.planets);
+        if (impact && impact.t <= segLen) {
+          const hx = fromX + dir.x * impact.t;
+          const hy = fromY + dir.y * impact.t;
+          if (impact.core) {
+            this.registerHit(impact.planet, hx, hy);
+          } else {
+            // Graze: shove the blocker along the shot and keep playing.
+            applyGrazeImpulse(impact.planet, dir);
+            burst(this.particles, hx, hy, '#FFFFFF', 6, 3);
+            this.shake.kick(0.06);
+            this.audio.graze();
+          }
+          this.bullets.splice(i, 1);
+          continue outer;
         }
-        this.bullets.splice(i, 1);
-        continue outer;
       }
 
       const offscreen =

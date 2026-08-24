@@ -48,6 +48,15 @@ describe('firstImpact', () => {
     expect(firstImpact(ship, { x: 1, y: 0 }, planets)).toBeNull();
   });
 
+  it('kills on rim entry when the path runs through the core (CCD regression)', () => {
+    // Bullet segment ends right at the rim, but the trajectory aims dead-centre.
+    const planets = [planet({ x: 175, y: 0, radius: 40 })];
+    const hit = firstImpact({ x: 0, y: 0 }, { x: 1, y: 0 }, planets);
+    expect(hit).not.toBeNull();
+    expect(hit!.core).toBe(true);
+    expect(hit!.t).toBeCloseTo(135); // contact at the rim, not the centre
+  });
+
   it('returns null on a clear path', () => {
     expect(firstImpact(ship, { x: 1, y: 0 }, [planet({ x: -100, y: 0 })])).toBeNull();
   });
