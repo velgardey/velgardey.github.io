@@ -76,7 +76,7 @@ describe('elasticCollide', () => {
 
 describe('bounceOff', () => {
   it('reflects an approach and ejects the body outside the circle', () => {
-    const b = body({ x: 60, y: 0, vx: -4 }); // heading toward a circle at origin
+    const b = body({ x: 35, y: 0, vx: -4 }); // heading toward a circle at origin
     expect(bounceOff(b, 0, 0, 30)).toBe(true);
     const dist = Math.hypot(b.x, b.y);
     expect(dist).toBeGreaterThanOrEqual(40); // radius 10 + circle 30
