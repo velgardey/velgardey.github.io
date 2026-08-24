@@ -1,4 +1,4 @@
-import type { Bullet, Particle, Planet, Ring, Vec2, Viewport } from './types';
+import type { Bullet, Dust, Particle, Planet, Ring, Vec2, Viewport } from './types';
 
 export interface Star {
   x: number;
@@ -53,6 +53,23 @@ export function makeStars(vp: Viewport, count: number): Star[] {
     });
   }
   return stars;
+}
+
+export function makeDust(vp: Viewport, count: number): Dust[] {
+  return Array.from({ length: count }, () => ({
+    x: Math.random() * vp.width,
+    y: Math.random() * vp.height,
+    vx: (Math.random() - 0.5) * 16,
+    vy: (Math.random() - 0.5) * 16,
+    size: 1 + Math.random() * 1.6,
+    phase: Math.random() * Math.PI * 2,
+    capturedBy: -1,
+    orbitAngle: 0,
+    orbitRadius: 0,
+    orbitSpeed: 0,
+    releaseIn: 0,
+    cooldown: 0,
+  }));
 }
 
 export function makeAsteroids(vp: Viewport, count: number): Asteroid[] {
@@ -127,7 +144,7 @@ export function drawBackground(
     if (y < 0) y += vp.height;
     if (y > vp.height) y -= vp.height;
 
-    const twinkle = reducedMotion ? 1 : 0.7 + 0.3 * Math.sin(time * 0.001 + s.phase);
+    const twinkle = reducedMotion ? 1 : 0.75 + 0.25 * Math.sin(time * 0.0005 + s.phase);
 
     // Warp streaks: during a jump, stars stretch radially away from centre.
     if (warp > 0.02) {
@@ -169,6 +186,22 @@ export function drawBackground(
     ctx.stroke();
     ctx.restore();
   }
+}
+
+/** Ambient dust: dim, slow-twinkling; captured grains tint toward their planet. */
+export function drawDust(ctx: CanvasRenderingContext2D, dust: Dust[], planets: Planet[], time: number): void {
+  for (const d of dust) {
+    // Slow twinkle across the whole field.
+    const twinkle = 0.55 + 0.45 * Math.sin(time * 0.0006 + d.phase);
+    const captured = d.capturedBy >= 0;
+    const tint = captured && planets[d.capturedBy] ? planets[d.capturedBy].color : '#BFD5FF';
+    ctx.globalAlpha = (captured ? 0.55 : 0.32) * twinkle;
+    ctx.fillStyle = tint;
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.size + (captured ? 0.4 : 0), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
 }
 
 export function advanceAsteroids(asteroids: Asteroid[], dt: number, vp: Viewport): void {
@@ -278,7 +311,7 @@ function drawRingParticles(ctx: CanvasRenderingContext2D, p: Planet, time: numbe
   for (const rp of p.ringParticles) {
     const a = rp.angle + time * 0.001 * rp.speed;
     const r = p.radius + rp.lift;
-    const twinkle = 0.7 + 0.3 * Math.sin(time * 0.004 + rp.phase);
+    const twinkle = 0.72 + 0.28 * Math.sin(time * 0.0012 + rp.phase);
     ctx.globalAlpha = rp.alpha * twinkle;
     ctx.fillStyle = '#CFF9F2';
     ctx.beginPath();

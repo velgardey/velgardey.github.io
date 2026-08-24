@@ -13,18 +13,21 @@ import {
   advanceAsteroids,
   drawBackground,
   drawBullets,
+  drawDust,
   drawParticles,
   drawPlanet,
   drawRings,
   drawShip,
   drawWipe,
   makeAsteroids,
+  makeDust,
   makeStars,
   type Asteroid,
   type Star,
 } from './render';
+import { stepDust } from './gravity';
 import { spawnPlanets } from './spawn';
-import type { Bullet, Planet, PlanetDef, Particle, Ring, Vec2, Viewport } from './types';
+import type { Bullet, Dust, Planet, PlanetDef, Particle, Ring, Vec2, Viewport } from './types';
 
 const BULLET_SPEED = 900; // px/s
 const MAX_DT = 0.05;
@@ -66,6 +69,7 @@ export class GameEngine {
   private rings: Ring[] = [];
   private stars: Star[] = [];
   private asteroids: Asteroid[] = [];
+  private dust: Dust[] = [];
 
   private aim: Vec2 = { x: 0, y: 0 };
   private shipAngle = -Math.PI / 2;
@@ -143,6 +147,7 @@ export class GameEngine {
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     this.stars = makeStars(this.vp, this.mobile ? 150 : 300);
     this.asteroids = makeAsteroids(this.vp, 5);
+    this.dust = makeDust(this.vp, this.mobile ? 28 : 60);
   }
 
   shootAt(x: number, y: number): void {
@@ -283,6 +288,7 @@ export class GameEngine {
     }
 
     this.updateBullets(dt);
+    this.updateDust(dt);
 
     advanceAsteroids(this.asteroids, dt, this.vp);
     updateParticles(this.particles, dt);
@@ -324,6 +330,21 @@ export class GameEngine {
     this.hooks.onPlanetHit(planet);
   }
 
+  /** Drift + gravity capture/release for the ambient dust field. */
+  private updateDust(dt: number): void {
+    for (const d of this.dust) {
+      stepDust(d, this.planets, this.dust, dt);
+      if (d.capturedBy === -1) {
+        d.x += d.vx * dt;
+        d.y += d.vy * dt;
+        if (d.x < -12) d.x = this.vp.width + 12;
+        if (d.x > this.vp.width + 12) d.x = -12;
+        if (d.y < -12) d.y = this.vp.height + 12;
+        if (d.y > this.vp.height + 12) d.y = -12;
+      }
+    }
+  }
+
   private updateHover(): void {
     let found: Planet | null = null;
     for (let i = this.planets.length - 1; i >= 0; i--) {
@@ -355,6 +376,7 @@ export class GameEngine {
       this.reducedMotion,
       this.warp,
     );
+    drawDust(ctx, this.dust, this.planets, t);
 
     ctx.save();
     if (!this.reducedMotion) {

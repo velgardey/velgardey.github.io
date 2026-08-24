@@ -79,6 +79,27 @@ export interface Ring {
   width: number;
 }
 
+/**
+ * Ambient background dust. Free particles drift and slowly twinkle; those that
+ * wander into a planet's gravity well are captured into orbit (see gravity.ts)
+ * and later ejected again.
+ */
+export interface Dust {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  phase: number;
+  /** Index into the engine's planet array; -1 while free. */
+  capturedBy: number;
+  orbitAngle: number;
+  orbitRadius: number;
+  orbitSpeed: number;
+  releaseIn: number;
+  cooldown: number;
+}
+
 export type PageId = 'main' | 'projects' | 'contact';
 
 export type Screen = { page: PageId } | { page: 'detail'; projectId: string; from: PageId };
