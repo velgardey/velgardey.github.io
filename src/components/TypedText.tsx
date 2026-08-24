@@ -101,7 +101,9 @@ const TypedText: React.FC<TypedTextProps> = ({ text, style, collidable = false, 
             {words.map((word, index) => (
                 <span
                     key={index}
-                    ref={(el) => wordRefs.current[index] = el}
+                    ref={(el) => {
+                      wordRefs.current[index] = el;
+                    }}
                     style={{
                         display: 'inline-block',
                         transition: 'all 0.2s',

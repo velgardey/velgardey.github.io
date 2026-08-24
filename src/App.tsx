@@ -39,7 +39,7 @@ const App: React.FC = () => {
     const [permanentTitleOpacity, setPermanentTitleOpacity] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [spacecraftPosition, setSpacecraftPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-    const animationFrameRef = useRef<number>();
+    const animationFrameRef = useRef<number | undefined>(undefined);
     const isMobile = useMediaQuery({ query: '(max-width: 1024px)' });
     const particleCount = useMemo(() => isMobile ? 50 : 100, [isMobile]);
     const starCount = useMemo(() => isMobile ? 150 : 300, [isMobile]);
