@@ -11,7 +11,9 @@ import {
 } from './physics';
 import {
   advanceAsteroids,
+  drawAimGuide,
   drawBackground,
+  drawBeams,
   drawBullets,
   drawDust,
   drawParticles,
@@ -25,9 +27,10 @@ import {
   type Asteroid,
   type Star,
 } from './render';
-import { stepDust } from './gravity';
+import { applyGrazeImpulse, CORE_HIT_RATIO } from './ballistics';
+import { seedCaptures, stepDust } from './gravity';
 import { spawnPlanets } from './spawn';
-import type { Bullet, Dust, Planet, PlanetDef, Particle, Ring, Vec2, Viewport } from './types';
+import type { Beam, Bullet, Dust, Planet, PlanetDef, Particle, Ring, Vec2, Viewport } from './types';
 
 const BULLET_SPEED = 900; // px/s
 const MAX_DT = 0.05;
@@ -70,6 +73,7 @@ export class GameEngine {
   private stars: Star[] = [];
   private asteroids: Asteroid[] = [];
   private dust: Dust[] = [];
+  private beams: Beam[] = [];
 
   private aim: Vec2 = { x: 0, y: 0 };
   private shipAngle = -Math.PI / 2;
@@ -127,6 +131,7 @@ export class GameEngine {
     this.planets.forEach((p, i) => {
       p.spawnT = -i * 0.14; // staggered warp-in
     });
+    seedCaptures(this.dust, this.planets, this.mobile ? 2 : 3);
     this.focusedIndex = -1;
     this.setHovered(null, this.aim.x, this.aim.y);
   }
@@ -147,7 +152,7 @@ export class GameEngine {
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     this.stars = makeStars(this.vp, this.mobile ? 150 : 300);
     this.asteroids = makeAsteroids(this.vp, 5);
-    this.dust = makeDust(this.vp, this.mobile ? 28 : 60);
+    this.dust = makeDust(this.vp, this.mobile ? 45 : 90);
   }
 
   shootAt(x: number, y: number): void {
@@ -177,7 +182,22 @@ export class GameEngine {
   activateFocus(): void {
     if (this.locked || this.wipe || this.focusedIndex < 0) return;
     const planet = this.planets[this.focusedIndex];
-    if (planet) this.shootAt(planet.x, planet.y);
+    if (!planet) return;
+
+    const from = { x: this.vp.width / 2, y: this.vp.height / 2 };
+    this.shipAngle = Math.atan2(planet.y - from.y, planet.x - from.x);
+    this.muzzle = 0.09;
+    this.beams.push({
+      x1: from.x,
+      y1: from.y,
+      x2: planet.x,
+      y2: planet.y,
+      life: 0.16,
+      maxLife: 0.16,
+      color: '#7DF9FF',
+    });
+    this.audio.shoot();
+    this.registerHit(planet, planet.x, planet.y);
   }
 
   /** Full-screen colour wipe toward `done`; used for page transitions. */
@@ -290,6 +310,11 @@ export class GameEngine {
     this.updateBullets(dt);
     this.updateDust(dt);
 
+    for (let i = this.beams.length - 1; i >= 0; i--) {
+      this.beams[i].life -= dt;
+      if (this.beams[i].life <= 0) this.beams.splice(i, 1);
+    }
+
     advanceAsteroids(this.asteroids, dt, this.vp);
     updateParticles(this.particles, dt);
     updateRings(this.rings, dt);
@@ -306,11 +331,23 @@ export class GameEngine {
       b.y += b.vy * dt;
 
       for (const planet of this.planets) {
-        if (Math.hypot(b.x - planet.x, b.y - planet.y) < planet.radius) {
+        const dist = Math.hypot(b.x - planet.x, b.y - planet.y);
+        if (dist >= planet.radius) continue;
+
+        const speed = Math.hypot(b.vx, b.vy) || 1;
+        const dir = { x: b.vx / speed, y: b.vy / speed };
+
+        if (dist < planet.radius * CORE_HIT_RATIO) {
           this.registerHit(planet, b.x, b.y);
-          this.bullets.splice(i, 1);
-          continue outer;
+        } else {
+          // Graze: shove the blocker along the shot and keep playing.
+          applyGrazeImpulse(planet, dir);
+          burst(this.particles, b.x, b.y, '#FFFFFF', 6, 3);
+          this.shake.kick(0.06);
+          this.audio.graze();
         }
+        this.bullets.splice(i, 1);
+        continue outer;
       }
 
       const offscreen =
@@ -392,8 +429,13 @@ export class GameEngine {
       drawPlanet(ctx, p, p === this.hovered, this.planets.indexOf(p) === this.focusedIndex, t, center);
     }
     drawRings(ctx, this.rings);
+    drawBeams(ctx, this.beams);
     drawBullets(ctx, this.bullets);
     drawParticles(ctx, this.particles);
+
+    if (!this.mobile && !this.wipe && !this.locked) {
+      drawAimGuide(ctx, center, this.aim, this.planets);
+    }
     drawShip(ctx, center, this.shipAngle, this.muzzle, t);
 
     ctx.restore();

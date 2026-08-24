@@ -20,23 +20,11 @@ export interface PlanetDef {
   url?: string;
 }
 
-export interface RingParticle {
-  angle: number;
-  /** rad/s along the perimeter */
-  speed: number;
-  size: number;
-  alpha: number;
-  /** height above the planet surface */
-  lift: number;
-  phase: number;
-}
-
 export interface Planet extends Kinematic {
   defId: string;
   label: string;
   color: string;
   url?: string;
-  ringParticles: RingParticle[];
   /** Seconds remaining of the white hit-flash overlay. */
   flash: number;
   /**
@@ -98,6 +86,17 @@ export interface Dust {
   orbitSpeed: number;
   releaseIn: number;
   cooldown: number;
+}
+
+/** Lock-on tracer from the ship to a focused planet. */
+export interface Beam {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  life: number;
+  maxLife: number;
+  color: string;
 }
 
 export type PageId = 'main' | 'projects' | 'contact';

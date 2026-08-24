@@ -44,31 +44,17 @@ describe('spawnPlanets', () => {
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 
+  it('planets are born bare — rings come from captured dust', () => {
+    const planets = spawnPlanets([...NAV_PLANETS], viewports[0], false, 3);
+    expect(planets.every((p) => !('ringParticles' in p))).toBe(true);
+  });
+
   it('carries def content onto the planet', () => {
     const [planet] = spawnPlanets([{ id: 'x', label: 'Hello World', color: '#FFFFFF' }], viewports[0], false, 1);
     expect(planet.defId).toBe('x');
     expect(planet.label).toBe('Hello World');
     expect(planet.color).toBe('#FFFFFF');
     expect(planet.flash).toBe(0);
-  });
-
-  it('decorates rings with sane orbiting particles', () => {
-    const planets = spawnPlanets([...NAV_PLANETS], viewports[0], false, 3);
-    for (const p of planets) {
-      expect(p.ringParticles.length).toBeLessThanOrEqual(16);
-      for (const rp of p.ringParticles) {
-        expect(rp.lift).toBeGreaterThan(0);
-        expect(rp.speed).toBeGreaterThan(0);
-      }
-    }
-  });
-});
-
-describe('mulberry32', () => {
-  it('produces a deterministic sequence per seed', () => {
-    const a = mulberry32(42);
-    const b = mulberry32(42);
-    expect([a(), a(), a()]).toEqual([b(), b(), b()]);
   });
 
   it('different seeds give different sequences', () => {

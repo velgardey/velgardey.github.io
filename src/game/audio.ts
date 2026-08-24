@@ -73,6 +73,11 @@ export class AudioManager {
     this.play('shoot', 0.15, true);
   }
 
+  /** Soft tick when a shot only grazes a planet. */
+  graze(): void {
+    this.play('shoot', 0.05, true);
+  }
+
   explosion(): void {
     this.play('explosion', 0.35);
     this.duckMusic();

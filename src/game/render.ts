@@ -1,4 +1,5 @@
-import type { Bullet, Dust, Particle, Planet, Ring, Vec2, Viewport } from './types';
+import { firstImpact } from './ballistics';
+import type { Beam, Bullet, Dust, Particle, Planet, Ring, Vec2, Viewport } from './types';
 
 export interface Star {
   x: number;
@@ -59,8 +60,8 @@ export function makeDust(vp: Viewport, count: number): Dust[] {
   return Array.from({ length: count }, () => ({
     x: Math.random() * vp.width,
     y: Math.random() * vp.height,
-    vx: (Math.random() - 0.5) * 16,
-    vy: (Math.random() - 0.5) * 16,
+    vx: (Math.random() - 0.5) * 30,
+    vy: (Math.random() - 0.5) * 30,
     size: 1 + Math.random() * 1.6,
     phase: Math.random() * Math.PI * 2,
     capturedBy: -1,
@@ -188,6 +189,67 @@ export function drawBackground(
   }
 }
 
+/** Lock-on tracer fired at a focused planet. */
+export function drawBeams(ctx: CanvasRenderingContext2D, beams: Beam[]): void {
+  for (const b of beams) {
+    ctx.globalAlpha = Math.max(0, b.life / b.maxLife);
+    ctx.strokeStyle = b.color;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = b.color;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(b.x1, b.y1);
+    ctx.lineTo(b.x2, b.y2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+  ctx.globalAlpha = 1;
+}
+
+/**
+ * Tactical aim guide: dotted ray to the first planet in the path. Solid dot =
+ * core (kill) shot, hollow ring = graze (shove) shot.
+ */
+export function drawAimGuide(ctx: CanvasRenderingContext2D, from: Vec2, to: Vec2, planets: Planet[]): void {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 1) return;
+  const dir = { x: dx / len, y: dy / len };
+
+  ctx.save();
+  ctx.globalAlpha = 0.3;
+  ctx.strokeStyle = '#9BE8DC';
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([2, 8]);
+  ctx.beginPath();
+  ctx.moveTo(from.x + dir.x * 34, from.y + dir.y * 34);
+  ctx.lineTo(to.x, to.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const impact = firstImpact(from, dir, planets);
+  if (impact) {
+    const cx = from.x + dir.x * impact.t;
+    const cy = from.y + dir.y * impact.t;
+    if (impact.core) {
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = '#7DF9FF';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.globalAlpha = 0.6;
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
 /** Ambient dust: dim, slow-twinkling; captured grains tint toward their planet. */
 export function drawDust(ctx: CanvasRenderingContext2D, dust: Dust[], planets: Planet[], time: number): void {
   for (const d of dust) {
@@ -281,8 +343,6 @@ export function drawPlanet(
   ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
   ctx.stroke();
 
-  if (!arriving) drawRingParticles(ctx, p, time);
-
   drawLabel(ctx, p, radius);
 
   if (p.flash > 0) {
@@ -304,21 +364,6 @@ export function drawPlanet(
     ctx.stroke();
     ctx.setLineDash([]);
   }
-}
-
-/** Orbiting particles hugging the surface — the ring IS the moving particles. */
-function drawRingParticles(ctx: CanvasRenderingContext2D, p: Planet, time: number): void {
-  for (const rp of p.ringParticles) {
-    const a = rp.angle + time * 0.001 * rp.speed;
-    const r = p.radius + rp.lift;
-    const twinkle = 0.72 + 0.28 * Math.sin(time * 0.0012 + rp.phase);
-    ctx.globalAlpha = rp.alpha * twinkle;
-    ctx.fillStyle = '#CFF9F2';
-    ctx.beginPath();
-    ctx.arc(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r, rp.size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
 }
 
 function drawLabel(ctx: CanvasRenderingContext2D, p: Planet, radius: number): void {

@@ -1,5 +1,5 @@
 import { SHIP_RADIUS } from './physics';
-import type { Planet, PlanetDef, RingParticle, Viewport } from './types';
+import type { Planet, PlanetDef, Viewport } from './types';
 
 /** Small, fast, seedable PRNG — deterministic layouts for tests and stable decoration. */
 export function mulberry32(seed: number): () => number {
@@ -23,24 +23,6 @@ export function planetRadius(label: string, mobile: boolean): number {
   const base = mobile ? 44 : 68;
   const perChar = mobile ? 1.4 : 2.6;
   return Math.max(base, base + label.length * perChar);
-}
-
-function decorate(rng: () => number): Pick<Planet, 'ringParticles'> {
-  const ringParticles: RingParticle[] = [];
-  if (rng() < 0.55) {
-    const count = 10 + Math.floor(rng() * 7); // 10..16
-    for (let i = 0; i < count; i++) {
-      ringParticles.push({
-        angle: (i / count) * Math.PI * 2 + rng() * 0.6,
-        speed: 0.35 + rng() * 0.55, // same direction, varied pace
-        size: 1.2 + rng() * 1.6,
-        alpha: 0.35 + rng() * 0.5,
-        lift: 7 + rng() * 13,
-        phase: rng() * Math.PI * 2,
-      });
-    }
-  }
-  return { ringParticles };
 }
 
 /**
@@ -82,8 +64,7 @@ function tryLayout(
     const spot = findSpot(radius, vp, placed, rng);
     if (!spot) return null;
 
-    const { ringParticles } = decorate(rng);
-    placed.push(toPlanet(def, spot.x, spot.y, radius, mobile, ringParticles, rng()));
+    placed.push(toPlanet(def, spot.x, spot.y, radius, mobile, rng()));
   }
   return placed;
 }
@@ -141,11 +122,10 @@ function bottomLine(
 
   defs.forEach((def, index) => {
     const radius = planetRadius(def.label, mobile);
-    const { ringParticles } = decorate(rng);
     const step = (vp.width - radius * 2) / slots;
     const x = radius + step * index;
     const y = vp.height - radius - 8;
-    placed.push(toPlanet(def, x, y, radius, mobile, ringParticles, rng()));
+    placed.push(toPlanet(def, x, y, radius, mobile, rng()));
   });
   return placed;
 }
@@ -156,7 +136,6 @@ function toPlanet(
   y: number,
   radius: number,
   mobile: boolean,
-  ringParticles: RingParticle[],
   seed: number,
 ): Planet {
   const angle = seed * Math.PI * 2;
@@ -171,7 +150,6 @@ function toPlanet(
     radius,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
-    ringParticles,
     flash: 0,
     spawnT: 0,
     seed,

@@ -11,7 +11,6 @@ const makePlanet = (o: Partial<Planet> = {}): Planet => ({
   vx: 0,
   vy: 0,
   radius: 50,
-  ringParticles: [],
   flash: 0,
   spawnT: 1,
   seed: 0,
