@@ -1,15 +1,18 @@
 import { useEffect, useRef } from 'react';
-import { CONTACT_PLANETS, NAV_PLANETS, PROJECTS } from '../data/content';
+import { CONTACT_PLANETS, PROJECTS } from '../data/content';
 import type { Planet } from '../game/types';
 
-const BLURBS: Record<string, string> = {
+const BASE_BLURBS: Record<string, string> = {
   projects: 'See what I have built',
   resume: 'Open my résumé',
   contact: 'Find me online',
   back: 'Return to the previous view',
+};
+
+const BLURBS: Record<string, string> = {
+  ...BASE_BLURBS,
   ...Object.fromEntries(PROJECTS.map((p) => [p.id, p.oneLiner])),
   ...Object.fromEntries(CONTACT_PLANETS.map((p) => [p.id, 'Say hello'])),
-  ...Object.fromEntries(NAV_PLANETS.map((p) => [p.id, BLURBS[p.id] ?? ''])),
 };
 
 /** Floating card near the cursor describing the hovered planet. */

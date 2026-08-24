@@ -76,7 +76,8 @@ export class GameEngine {
   private lastFrame = 0;
   private rafId: number | null = null;
   private bulletId = 0;
-  private paused = false;
+  /** Blocks player intents (shooting/focusing) without freezing the world. */
+  private locked = false;
   private reducedMotion = false;
   private mobile = false;
   private detachInput: (() => void) | null = null;
@@ -121,8 +122,8 @@ export class GameEngine {
     this.reducedMotion = reduced;
   }
 
-  setPaused(paused: boolean): void {
-    this.paused = paused;
+  setLocked(locked: boolean): void {
+    this.locked = locked;
   }
 
   resize(): void {
@@ -136,7 +137,7 @@ export class GameEngine {
   }
 
   shootAt(x: number, y: number): void {
-    if (this.paused) return;
+    if (this.locked || this.wipe) return;
     const dx = x - this.vp.width / 2;
     const dy = y - this.vp.height / 2;
     const angle = Math.atan2(dy, dx);
@@ -155,12 +156,12 @@ export class GameEngine {
   }
 
   focusNext(): void {
-    if (this.paused || this.planets.length === 0) return;
+    if (this.locked || this.wipe || this.planets.length === 0) return;
     this.focusedIndex = (this.focusedIndex + 1) % this.planets.length;
   }
 
   activateFocus(): void {
-    if (this.paused || this.focusedIndex < 0) return;
+    if (this.locked || this.wipe || this.focusedIndex < 0) return;
     const planet = this.planets[this.focusedIndex];
     if (planet) this.shootAt(planet.x, planet.y);
   }
@@ -226,8 +227,17 @@ export class GameEngine {
     const dt = Math.min((t - this.lastFrame) / 1000, MAX_DT);
     this.lastFrame = t;
 
-    if (!this.paused && !this.wipe) this.update(dt);
-    else updateParticles(this.particles, dt); // keep debris settling during pauses
+    if (this.wipe) {
+      updateParticles(this.particles, dt);
+      this.wipe.progress += dt * 2.2;
+      if (this.wipe.progress >= 1) {
+        const done = this.wipe.done;
+        this.wipe = null;
+        done();
+      }
+    } else {
+      this.update(dt);
+    }
 
     this.render(t);
   }
@@ -258,15 +268,6 @@ export class GameEngine {
     updateRings(this.rings, dt);
     this.shake.update(dt);
     this.muzzle = Math.max(0, this.muzzle - dt);
-
-    if (this.wipe) {
-      this.wipe.progress += dt * 2.2;
-      if (this.wipe.progress >= 1) {
-        const done = this.wipe.done;
-        this.wipe = null;
-        done();
-      }
-    }
 
     this.updateHover();
   }

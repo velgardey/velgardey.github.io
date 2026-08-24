@@ -20,6 +20,8 @@ export function useGameEngine(
     const instance = new GameEngine(canvas, {
       onHover: (planet, x, y) => hooksRef.current.onHover(planet, x, y),
       onPlanetHit: (planet) => hooksRef.current.onPlanetHit(planet),
+      onUiCommand: (cmd) => hooksRef.current.onUiCommand?.(cmd),
+      onCancel: () => hooksRef.current.onCancel?.(),
     });
     instance.start();
     setEngine(instance);

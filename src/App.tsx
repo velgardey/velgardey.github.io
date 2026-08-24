@@ -37,14 +37,18 @@ export default function App() {
     // Project planet: no wipe — the dossier slides over the drifting field.
     if (current.page !== 'detail' && next?.page === 'detail') {
       engine.audio.explosion();
+      engine.setLocked(true); // shooting disabled while the panel is open
       setScreen(next);
       return;
     }
 
-    // Page change: freeze the field, wipe, then swap planet sets.
+    // Page change: lock input, wipe, then swap planet sets.
     if (next) {
-      engine.setPaused(true);
-      engine.beginWipe({ x: planet.x, y: planet.y }, planet.color, () => setScreen(next));
+      engine.setLocked(true);
+      engine.beginWipe({ x: planet.x, y: planet.y }, planet.color, () => {
+        setScreen(next);
+        engine.setLocked(false);
+      });
       return;
     }
 
@@ -78,7 +82,6 @@ export default function App() {
 
     spawnedPage.current = page;
     engine.setPlanets(defsForScreen(page));
-    engine.setPaused(false);
   }, [engine, screen]);
 
   // Reduced-motion + mobile layout flags.
@@ -123,7 +126,10 @@ export default function App() {
       {detailProject && (
         <DossierPanel
           project={detailProject}
-          onClose={() => setScreen({ page: screen.page === 'detail' ? screen.from : 'main' })}
+          onClose={() => {
+            engine?.setLocked(false);
+            setScreen({ page: screen.page === 'detail' ? screen.from : 'main' });
+          }}
         />
       )}
       {helpOpen && <HelpOverlay onClose={() => setHelpOpen(false)} />}
