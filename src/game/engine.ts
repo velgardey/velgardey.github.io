@@ -64,7 +64,6 @@ export class GameEngine {
 
   private ctx: CanvasRenderingContext2D;
   private vp: Viewport = { width: 0, height: 0 };
-  private dpr = 1;
 
   private planets: Planet[] = [];
   private bullets: Bullet[] = [];
@@ -85,7 +84,6 @@ export class GameEngine {
 
   private lastFrame = 0;
   private rafId: number | null = null;
-  private bulletId = 0;
   /** Blocks player intents (shooting/focusing) without freezing the world. */
   private locked = false;
   private reducedMotion = false;
@@ -151,10 +149,10 @@ export class GameEngine {
 
   resize(): void {
     this.vp = { width: window.innerWidth, height: window.innerHeight };
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.canvas.width = this.vp.width * this.dpr;
-    this.canvas.height = this.vp.height * this.dpr;
-    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.canvas.width = this.vp.width * dpr;
+    this.canvas.height = this.vp.height * dpr;
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.stars = makeStars(this.vp, this.mobile ? 150 : 300);
     this.asteroids = makeAsteroids(this.vp, 5);
     this.dust = makeDust(this.vp, this.mobile ? 45 : 90);
@@ -171,7 +169,6 @@ export class GameEngine {
     this.audio.shoot();
 
     this.bullets.push({
-      id: this.bulletId++,
       x: this.vp.width / 2 + Math.cos(angle) * SHIP_RADIUS,
       y: this.vp.height / 2 + Math.sin(angle) * SHIP_RADIUS,
       vx: Math.cos(angle) * BULLET_SPEED,
@@ -221,10 +218,6 @@ export class GameEngine {
       return;
     }
     this.hooks.onUiCommand?.(cmd);
-  }
-
-  get isMobile(): boolean {
-    return this.mobile;
   }
 
   setMobile(mobile: boolean): void {

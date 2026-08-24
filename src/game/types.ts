@@ -36,7 +36,6 @@ export interface Planet extends Kinematic {
 }
 
 export interface Bullet {
-  id: number;
   x: number;
   y: number;
   /** px/s */

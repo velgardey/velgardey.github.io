@@ -5,9 +5,9 @@ import { PROFILE } from '../data/content';
 export default function IntroText() {
   const [typed, setTyped] = useState('');
   const [showTagline, setShowTagline] = useState(false);
-  const greeting = `Hi, I'm ${PROFILE.name}`;
 
   useEffect(() => {
+    const greeting = `Hi, I'm ${PROFILE.name}`;
     let char = 0;
     const typer = setInterval(() => {
       char += 1;
@@ -18,8 +18,6 @@ export default function IntroText() {
       }
     }, 55);
     return () => clearInterval(typer);
-    // The greeting never changes during a mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
