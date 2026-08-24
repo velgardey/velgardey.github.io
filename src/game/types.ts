@@ -39,6 +39,11 @@ export interface Planet extends Kinematic {
   ringParticles: RingParticle[];
   /** Seconds remaining of the white hit-flash overlay. */
   flash: number;
+  /**
+   * Warp-in animation clock. Negative = still queued (staggered), 0..1 =
+   * scaling in, 1 = fully arrived.
+   */
+  spawnT: number;
   seed: number;
 }
 

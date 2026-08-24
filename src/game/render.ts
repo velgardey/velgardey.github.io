@@ -92,6 +92,7 @@ export function drawBackground(
   time: number,
   aim: Vec2,
   reducedMotion: boolean,
+  warp = 0,
 ): void {
   const bg = ctx.createLinearGradient(0, 0, 0, vp.height);
   bg.addColorStop(0, '#04060f');
@@ -100,13 +101,14 @@ export function drawBackground(
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, vp.width, vp.height);
 
-  // Drifting nebula clouds.
+  // Drifting nebula clouds, breathing slowly.
   for (const n of NEBULAE) {
     const drift = reducedMotion ? 0 : Math.sin(time * 0.00008 + n.x * 9) * 24;
+    const breathe = reducedMotion ? 1 : 1 + 0.18 * Math.sin(time * 0.0002 + n.y * 11);
     const x = n.x * vp.width + drift;
     const y = n.y * vp.height + drift * 0.6;
     const g = ctx.createRadialGradient(x, y, 0, x, y, n.r * Math.min(vp.width, vp.height));
-    g.addColorStop(0, `rgba(${n.rgb},${n.a})`);
+    g.addColorStop(0, `rgba(${n.rgb},${n.a * breathe})`);
     g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, vp.width, vp.height);
@@ -126,6 +128,25 @@ export function drawBackground(
     if (y > vp.height) y -= vp.height;
 
     const twinkle = reducedMotion ? 1 : 0.7 + 0.3 * Math.sin(time * 0.001 + s.phase);
+
+    // Warp streaks: during a jump, stars stretch radially away from centre.
+    if (warp > 0.02) {
+      const cx = vp.width / 2;
+      const cy = vp.height / 2;
+      const dx = x - cx;
+      const dy = y - cy;
+      const dist = Math.hypot(dx, dy) || 1;
+      const len = warp * (8 + s.layer * 14) * Math.min(1, dist / 220);
+      ctx.globalAlpha = s.alpha * twinkle * (0.5 + warp * 0.5);
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.r * 1.4;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + (dx / dist) * len, y + (dy / dist) * len);
+      ctx.stroke();
+      continue;
+    }
+
     ctx.globalAlpha = s.alpha * twinkle;
     ctx.fillStyle = s.color;
     ctx.beginPath();
@@ -162,51 +183,80 @@ export function advanceAsteroids(asteroids: Asteroid[], dt: number, vp: Viewport
   }
 }
 
+/** Back-eased overshoot for the warp-in arrival. */
+function easeOutBack(t: number): number {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * (t - 1) ** 3 + c1 * (t - 1) ** 2;
+}
+
 export function drawPlanet(
   ctx: CanvasRenderingContext2D,
   p: Planet,
   hovered: boolean,
   focused: boolean,
   time: number,
+  center: Vec2,
 ): void {
   const rgb = rgbOf(p.color);
+  const arriving = p.spawnT < 1;
+  const scale = arriving ? Math.max(0.001, easeOutBack(Math.max(0, p.spawnT))) : 1;
+  const radius = p.radius * scale;
+
+  // Arrival streak: a light trail pointing home while the planet materialises.
+  if (arriving) {
+    const strength = 1 - p.spawnT;
+    const dx = p.x - center.x;
+    const dy = p.y - center.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const g = ctx.createLinearGradient(p.x, p.y, p.x - (dx / dist) * 130, p.y - (dy / dist) * 130);
+    g.addColorStop(0, `rgba(${rgb},${0.5 * strength})`);
+    g.addColorStop(1, `rgba(${rgb},0)`);
+    ctx.strokeStyle = g;
+    ctx.lineWidth = p.radius * 0.5 * strength + 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x - (dx / dist) * 130, p.y - (dy / dist) * 130);
+    ctx.stroke();
+  }
 
   ctx.save();
   ctx.shadowColor = `rgba(${rgb},0.9)`;
   ctx.shadowBlur = hovered ? 34 : 16;
 
   const g = ctx.createRadialGradient(
-    p.x - p.radius * 0.3,
-    p.y - p.radius * 0.3,
-    p.radius * 0.1,
+    p.x - radius * 0.3,
+    p.y - radius * 0.3,
+    radius * 0.1,
     p.x,
     p.y,
-    p.radius,
+    radius,
   );
   g.addColorStop(0, `rgba(${lighten(rgb, 46)},1)`);
   g.addColorStop(1, `rgba(${rgb},0.88)`);
   ctx.fillStyle = g;
   ctx.beginPath();
-  ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+  ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // Ring behind label work happens above; stroke on top for crispness.
+  // Stroke on top for crispness.
   ctx.strokeStyle = hovered ? '#ffffff' : 'rgba(255,255,255,0.65)';
   ctx.lineWidth = hovered ? 2.5 : 1.5;
   ctx.beginPath();
-  ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+  ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
   ctx.stroke();
 
-  drawRingParticles(ctx, p, time);
+  if (!arriving) drawRingParticles(ctx, p, time);
 
-  drawLabel(ctx, p);
+  drawLabel(ctx, p, radius);
 
   if (p.flash > 0) {
     ctx.globalAlpha = Math.min(1, p.flash / 0.35) * 0.85;
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
   }
@@ -217,7 +267,7 @@ export function drawPlanet(
     ctx.setLineDash([7, 7]);
     ctx.lineDashOffset = -time * 0.02;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.radius + 10, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, radius + 10, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
   }
@@ -238,9 +288,9 @@ function drawRingParticles(ctx: CanvasRenderingContext2D, p: Planet, time: numbe
   ctx.globalAlpha = 1;
 }
 
-function drawLabel(ctx: CanvasRenderingContext2D, p: Planet): void {
+function drawLabel(ctx: CanvasRenderingContext2D, p: Planet, radius: number): void {
   const words = p.label.split(' ');
-  const fontSize = Math.max(11, Math.min(17, p.radius / 4));
+  const fontSize = Math.max(11, Math.min(17, radius / 4));
   ctx.font = `700 ${fontSize}px "Space Mono", monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';

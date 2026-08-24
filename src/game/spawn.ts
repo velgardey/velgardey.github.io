@@ -173,6 +173,7 @@ function toPlanet(
     vy: Math.sin(angle) * speed,
     ringParticles,
     flash: 0,
+    spawnT: 0,
     seed,
   };
 }

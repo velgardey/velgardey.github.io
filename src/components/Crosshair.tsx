@@ -15,8 +15,21 @@ export default function Crosshair() {
       el.style.transform = `translate3d(${e.clientX - 20}px, ${e.clientY - 20}px, 0)`;
     };
 
+    // Firing pulse: brief kick on every shot.
+    let pulseTimer: ReturnType<typeof setTimeout> | undefined;
+    const fire = () => {
+      el.classList.add('firing');
+      clearTimeout(pulseTimer);
+      pulseTimer = setTimeout(() => el.classList.remove('firing'), 180);
+    };
+    window.addEventListener('pointerdown', fire);
+
     window.addEventListener('pointermove', move, { passive: true });
-    return () => window.removeEventListener('pointermove', move);
+    return () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerdown', fire);
+      clearTimeout(pulseTimer);
+    };
   }, []);
 
   return (

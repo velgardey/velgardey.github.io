@@ -81,6 +81,10 @@ export class GameEngine {
   /** Blocks player intents (shooting/focusing) without freezing the world. */
   private locked = false;
   private reducedMotion = false;
+  /** Seconds of slow-motion remaining after a kill (game juice). */
+  private hitStop = 0;
+  /** 0..1, eased toward 1 while a wipe runs — drives the star-warp streaks. */
+  private warp = 0;
   private mobile = false;
   private detachInput: (() => void) | null = null;
 
@@ -116,6 +120,9 @@ export class GameEngine {
 
   setPlanets(defs: PlanetDef[]): void {
     this.planets = spawnPlanets(defs, this.vp, this.mobile);
+    this.planets.forEach((p, i) => {
+      p.spawnT = -i * 0.14; // staggered warp-in
+    });
     this.focusedIndex = -1;
     this.setHovered(null, this.aim.x, this.aim.y);
   }
@@ -227,8 +234,15 @@ export class GameEngine {
   }
 
   private frame(t: number): void {
-    const dt = Math.min((t - this.lastFrame) / 1000, MAX_DT);
+    let dt = Math.min((t - this.lastFrame) / 1000, MAX_DT);
     this.lastFrame = t;
+
+    // Hit-stop: briefly dip the time scale so kills feel weighty.
+    if (this.hitStop > 0) {
+      this.hitStop -= dt;
+      dt *= 0.12;
+    }
+    this.warp += ((this.wipe ? 1 : 0) - this.warp) * Math.min(1, dt * 9);
 
     if (this.wipe) {
       updateParticles(this.particles, dt);
@@ -260,6 +274,7 @@ export class GameEngine {
       bounceOff(p, cx, cy, SHIP_RADIUS);
       clampSpeed(p, targetSpeed);
       p.flash = Math.max(0, p.flash - dt);
+      if (p.spawnT < 1) p.spawnT = Math.min(1, p.spawnT + dt * 2.4);
     }
     for (let i = 0; i < this.planets.length; i++) {
       for (let j = i + 1; j < this.planets.length; j++) {
@@ -305,6 +320,7 @@ export class GameEngine {
     spawnRing(this.rings, x, y, planet.color, planet.radius * 2.4, planet.radius * 0.8);
     spawnRing(this.rings, x, y, '#FFFFFF', planet.radius * 1.5, planet.radius * 0.45);
     this.shake.kick(0.15);
+    if (!this.reducedMotion) this.hitStop = 0.05;
     this.hooks.onPlanetHit(planet);
   }
 
@@ -329,7 +345,16 @@ export class GameEngine {
 
   private render(t: number): void {
     const { ctx } = this;
-    drawBackground(ctx, this.vp, this.stars, this.asteroids, t, this.aim, this.reducedMotion);
+    drawBackground(
+      ctx,
+      this.vp,
+      this.stars,
+      this.asteroids,
+      t,
+      this.aim,
+      this.reducedMotion,
+      this.warp,
+    );
 
     ctx.save();
     if (!this.reducedMotion) {
@@ -337,19 +362,17 @@ export class GameEngine {
       ctx.translate(off.x, off.y);
     }
 
+    const bobX = this.reducedMotion ? 0 : Math.sin(t * 0.0016) * 3;
+    const bobY = this.reducedMotion ? 0 : Math.cos(t * 0.0011) * 2.5;
+    const center = { x: this.vp.width / 2 + bobX, y: this.vp.height / 2 + bobY };
     for (const p of this.planets) {
-      drawPlanet(ctx, p, p === this.hovered, this.planets.indexOf(p) === this.focusedIndex, t);
+      if (p.spawnT <= 0) continue; // still queued for warp-in
+      drawPlanet(ctx, p, p === this.hovered, this.planets.indexOf(p) === this.focusedIndex, t, center);
     }
     drawRings(ctx, this.rings);
     drawBullets(ctx, this.bullets);
     drawParticles(ctx, this.particles);
-    drawShip(
-      ctx,
-      { x: this.vp.width / 2, y: this.vp.height / 2 },
-      this.shipAngle,
-      this.muzzle,
-      t,
-    );
+    drawShip(ctx, center, this.shipAngle, this.muzzle, t);
 
     ctx.restore();
 
